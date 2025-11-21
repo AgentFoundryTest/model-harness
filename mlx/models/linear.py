@@ -185,8 +185,8 @@ class LinearRegression(BaseModel):
         self.weights = theta[:-1]
         self.bias = theta[-1]
         
-        # Compute loss
-        predictions = self.forward(X)
+        # Compute loss (use manual computation instead of forward since not fitted yet)
+        predictions = X @ self.weights + self.bias
         loss = self._compute_loss(y, predictions)
         
         return {"loss": loss}
