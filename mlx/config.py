@@ -40,6 +40,13 @@ class DatasetConfig:
         """
         errors = []
         
+        # Validate name type
+        if not isinstance(self.name, str):
+            errors.append(
+                f"Dataset name must be a string, got {type(self.name).__name__}"
+            )
+            return errors  # Return early to avoid .lower() on non-string
+        
         if not self.name:
             errors.append("Dataset name is required")
         
@@ -71,6 +78,13 @@ class ModelConfig:
             List of validation error messages (empty if valid)
         """
         errors = []
+        
+        # Validate name type
+        if not isinstance(self.name, str):
+            errors.append(
+                f"Model name must be a string, got {type(self.name).__name__}"
+            )
+            return errors  # Return early to avoid .lower() on non-string
         
         if not self.name:
             errors.append("Model name is required")
