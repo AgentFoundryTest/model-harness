@@ -1,0 +1,32 @@
+{
+  "name": "mnist-classification",
+  "description": "Basic MNIST digit classification experiment",
+  "dataset": {
+    "name": "mnist",
+    "params": {
+      "download": true,
+      "normalize": true
+    }
+  },
+  "model": {
+    "name": "resnet18",
+    "architecture": "resnet",
+    "params": {
+      "num_classes": 10,
+      "pretrained": false
+    }
+  },
+  "training": {
+    "epochs": 10,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "optimizer": "adam",
+    "seed": 42
+  },
+  "output": {
+    "directory": "outputs/mnist-experiment",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 2,
+    "save_logs": true
+  }
+}
