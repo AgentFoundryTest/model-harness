@@ -121,15 +121,15 @@ class DatasetConfig:
                 errors.append(
                     f"Dataset param 'n_informative' must be positive, got {n_informative}"
                 )
-            # Check n_informative <= n_features if both are present
-            if "n_features" in self.params:
-                n_features = self.params["n_features"]
-                if isinstance(n_features, int) and isinstance(n_informative, int):
-                    if n_informative > n_features:
-                        errors.append(
-                            f"Dataset param 'n_informative' ({n_informative}) "
-                            f"cannot exceed 'n_features' ({n_features})"
-                        )
+            # Check n_informative <= n_features (accounting for defaults)
+            # Default n_features is 10 for synthetic datasets
+            n_features = self.params.get("n_features", 10)
+            if isinstance(n_features, int) and isinstance(n_informative, int):
+                if n_informative > n_features:
+                    errors.append(
+                        f"Dataset param 'n_informative' ({n_informative}) "
+                        f"cannot exceed 'n_features' ({n_features})"
+                    )
         
         # Validate seed
         if "seed" in self.params:
@@ -168,15 +168,15 @@ class DatasetConfig:
                         f"Dataset param 'n_classes' must be >= 2, got {n_classes}"
                     )
                 
-                # Validate n_samples >= n_classes if both are present
-                if "n_samples" in self.params:
-                    n_samples = self.params["n_samples"]
-                    if isinstance(n_samples, int) and isinstance(n_classes, int):
-                        if n_samples < n_classes:
-                            errors.append(
-                                f"Dataset param 'n_samples' ({n_samples}) must be >= "
-                                f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
-                            )
+                # Validate n_samples >= n_classes (accounting for defaults)
+                # Default n_samples is 1000 for synthetic datasets
+                n_samples = self.params.get("n_samples", 1000)
+                if isinstance(n_samples, int) and isinstance(n_classes, int):
+                    if n_samples < n_classes:
+                        errors.append(
+                            f"Dataset param 'n_samples' ({n_samples}) must be >= "
+                            f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
+                        )
             
             if "class_sep" in self.params:
                 class_sep = self.params["class_sep"]

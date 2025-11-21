@@ -83,6 +83,15 @@ class TestDatasetConfigValidation:
         errors = config.validate()
         assert any("n_samples" in err and "n_classes" in err and "at least one sample" in err for err in errors)
     
+    def test_n_classes_exceeds_default_n_samples(self):
+        """Test n_classes exceeding default n_samples when n_samples not provided."""
+        config = DatasetConfig(
+            name="synthetic_classification",
+            params={"n_classes": 2000}  # default n_samples is 1000
+        )
+        errors = config.validate()
+        assert any("n_samples" in err and "n_classes" in err and "at least one sample" in err for err in errors)
+    
     def test_invalid_class_sep(self):
         """Test invalid class_sep parameter."""
         config = DatasetConfig(
@@ -100,6 +109,15 @@ class TestDatasetConfigValidation:
                 "n_features": 5,
                 "n_informative": 10
             }
+        )
+        errors = config.validate()
+        assert any("n_informative" in err and "exceed" in err for err in errors)
+    
+    def test_n_informative_exceeds_default_n_features(self):
+        """Test n_informative exceeding default n_features when n_features not provided."""
+        config = DatasetConfig(
+            name="synthetic_regression",
+            params={"n_informative": 50}  # default n_features is 10
         )
         errors = config.validate()
         assert any("n_informative" in err and "exceed" in err for err in errors)
