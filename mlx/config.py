@@ -58,12 +58,140 @@ class DatasetConfig:
         
         # Check for unknown dataset names (basic validation)
         # This can be extended with a registry of known datasets
-        known_datasets = ["mnist", "cifar10", "cifar100", "imagenet", "custom"]
+        known_datasets = [
+            "mnist", "cifar10", "cifar100", "imagenet", "custom",
+            "synthetic_regression", "synthetic_classification"
+        ]
         if self.name.lower() not in known_datasets and not self.name.lower().startswith("custom"):
             errors.append(
                 f"Unknown dataset '{self.name}'. "
                 f"Known datasets: {', '.join(known_datasets)}"
             )
+        
+        # Validate synthetic dataset parameters
+        if self.name.lower() in ["synthetic_regression", "synthetic_classification"]:
+            errors.extend(self._validate_synthetic_params())
+        
+        return errors
+    
+    def _validate_synthetic_params(self) -> List[str]:
+        """
+        Validate parameters specific to synthetic datasets.
+        
+        Returns:
+            List of validation error messages
+        """
+        errors = []
+        
+        # Validate n_samples
+        if "n_samples" in self.params:
+            n_samples = self.params["n_samples"]
+            if not isinstance(n_samples, int) or isinstance(n_samples, bool):
+                errors.append(
+                    f"Dataset param 'n_samples' must be an integer, "
+                    f"got {type(n_samples).__name__}"
+                )
+            elif n_samples <= 0:
+                errors.append(
+                    f"Dataset param 'n_samples' must be positive, got {n_samples}"
+                )
+        
+        # Validate n_features
+        if "n_features" in self.params:
+            n_features = self.params["n_features"]
+            if not isinstance(n_features, int) or isinstance(n_features, bool):
+                errors.append(
+                    f"Dataset param 'n_features' must be an integer, "
+                    f"got {type(n_features).__name__}"
+                )
+            elif n_features <= 0:
+                errors.append(
+                    f"Dataset param 'n_features' must be positive, got {n_features}"
+                )
+        
+        # Validate n_informative
+        if "n_informative" in self.params:
+            n_informative = self.params["n_informative"]
+            if not isinstance(n_informative, int) or isinstance(n_informative, bool):
+                errors.append(
+                    f"Dataset param 'n_informative' must be an integer, "
+                    f"got {type(n_informative).__name__}"
+                )
+            elif n_informative <= 0:
+                errors.append(
+                    f"Dataset param 'n_informative' must be positive, got {n_informative}"
+                )
+            # Check n_informative <= n_features (accounting for defaults)
+            # Default n_features is 10 for synthetic datasets
+            n_features = self.params.get("n_features", 10)
+            if isinstance(n_features, int) and isinstance(n_informative, int):
+                if n_informative > n_features:
+                    errors.append(
+                        f"Dataset param 'n_informative' ({n_informative}) "
+                        f"cannot exceed 'n_features' ({n_features})"
+                    )
+        
+        # Validate seed
+        if "seed" in self.params:
+            seed = self.params["seed"]
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                errors.append(
+                    f"Dataset param 'seed' must be an integer, "
+                    f"got {type(seed).__name__}"
+                )
+        
+        # Regression-specific validation
+        if self.name.lower() == "synthetic_regression":
+            if "noise_std" in self.params:
+                noise_std = self.params["noise_std"]
+                if not isinstance(noise_std, (int, float)) or isinstance(noise_std, bool):
+                    errors.append(
+                        f"Dataset param 'noise_std' must be a number, "
+                        f"got {type(noise_std).__name__}"
+                    )
+                elif noise_std < 0:
+                    errors.append(
+                        f"Dataset param 'noise_std' must be non-negative, got {noise_std}"
+                    )
+        
+        # Classification-specific validation
+        if self.name.lower() == "synthetic_classification":
+            # Get values with defaults for validation
+            n_samples = self.params.get("n_samples", 1000)
+            n_classes = self.params.get("n_classes", 2)
+            
+            if "n_classes" in self.params:
+                n_classes_param = self.params["n_classes"]
+                if not isinstance(n_classes_param, int) or isinstance(n_classes_param, bool):
+                    errors.append(
+                        f"Dataset param 'n_classes' must be an integer, "
+                        f"got {type(n_classes_param).__name__}"
+                    )
+                elif n_classes_param < 2:
+                    errors.append(
+                        f"Dataset param 'n_classes' must be >= 2, got {n_classes_param}"
+                    )
+            
+            # Validate n_samples >= n_classes (accounting for defaults)
+            # This check applies whether n_samples, n_classes, or both are provided
+            if isinstance(n_samples, int) and isinstance(n_classes, int):
+                if n_samples < n_classes:
+                    errors.append(
+                        f"Dataset param 'n_samples' ({n_samples}) must be >= "
+                        f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
+                    )
+            
+            if "class_sep" in self.params:
+                class_sep = self.params["class_sep"]
+                if not isinstance(class_sep, (int, float)) or isinstance(class_sep, bool):
+                    errors.append(
+                        f"Dataset param 'class_sep' must be a number, "
+                        f"got {type(class_sep).__name__}"
+                    )
+                elif class_sep <= 0:
+                    errors.append(
+                        f"Dataset param 'class_sep' must be positive, got {class_sep}"
+                    )
         
         return errors
     
@@ -79,6 +207,58 @@ class DatasetConfig:
         """
         if self.path:
             return resolve_path(self.path, base_dir)
+        return None
+    
+    def create_dataset(self):
+        """
+        Create a dataset instance based on the configuration.
+        
+        Returns:
+            Dataset instance (BaseDataset subclass) or None for non-synthetic datasets
+            
+        Raises:
+            ValueError: If dataset type is unknown or parameters are invalid
+        """
+        from mlx.datasets import SyntheticRegressionDataset, SyntheticClassificationDataset
+        
+        dataset_name = self.name.lower()
+        
+        if dataset_name == "synthetic_regression":
+            # Extract parameters with defaults
+            n_samples = self.params.get("n_samples", 1000)
+            n_features = self.params.get("n_features", 10)
+            noise_std = self.params.get("noise_std", 0.1)
+            n_informative = self.params.get("n_informative", None)
+            seed = self.params.get("seed", None)
+            
+            return SyntheticRegressionDataset(
+                n_samples=n_samples,
+                n_features=n_features,
+                noise_std=noise_std,
+                n_informative=n_informative,
+                seed=seed
+            )
+        
+        elif dataset_name == "synthetic_classification":
+            # Extract parameters with defaults
+            n_samples = self.params.get("n_samples", 1000)
+            n_features = self.params.get("n_features", 10)
+            n_classes = self.params.get("n_classes", 2)
+            class_sep = self.params.get("class_sep", 1.0)
+            n_informative = self.params.get("n_informative", None)
+            seed = self.params.get("seed", None)
+            
+            return SyntheticClassificationDataset(
+                n_samples=n_samples,
+                n_features=n_features,
+                n_classes=n_classes,
+                class_sep=class_sep,
+                n_informative=n_informative,
+                seed=seed
+            )
+        
+        # For other datasets (mnist, cifar10, etc.), return None
+        # These would be handled by other parts of the system
         return None
 
 

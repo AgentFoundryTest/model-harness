@@ -1,0 +1,32 @@
+{
+  "name": "synthetic-regression-experiment",
+  "description": "Basic synthetic regression experiment with 20 features",
+  "dataset": {
+    "name": "synthetic_regression",
+    "params": {
+      "n_samples": 1000,
+      "n_features": 20,
+      "n_informative": 15,
+      "noise_std": 0.2
+    }
+  },
+  "model": {
+    "name": "custom",
+    "params": {
+      "type": "linear_regression"
+    }
+  },
+  "training": {
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "optimizer": "adam",
+    "seed": 42
+  },
+  "output": {
+    "directory": "outputs/synthetic-regression",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 10,
+    "save_logs": true
+  }
+}
