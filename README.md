@@ -141,7 +141,7 @@ All synthetic datasets support the following parameters in the `params` field:
 | `n_samples` | integer | 1000 | Number of samples to generate (must be positive) |
 | `n_features` | integer | 10 | Number of input features (must be positive) |
 | `n_informative` | integer | n_features | Number of informative features; rest are noise |
-| `seed` | integer | - | Random seed for generation (use training.seed if not specified) |
+| `seed` | integer | None | Optional random seed for generation. If provided, dataset uses this as default seed for `generate()` calls. If omitted, seed must be passed explicitly to `generate(seed=...)` |
 
 **Regression-specific parameters** (`synthetic_regression`):
 
