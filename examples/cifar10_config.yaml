@@ -1,0 +1,31 @@
+name: cifar10-classification
+description: CIFAR-10 image classification with data augmentation
+
+dataset:
+  name: cifar10
+  params:
+    download: true
+    augmentation: true
+
+model:
+  name: efficientnet_b0
+  architecture: efficientnet
+  params:
+    num_classes: 10
+    dropout: 0.2
+
+training:
+  epochs: 50
+  batch_size: 128
+  learning_rate: 0.001
+  optimizer: adamw
+  seed: 42
+  params:
+    weight_decay: 0.01
+    warmup_epochs: 5
+
+output:
+  directory: outputs/cifar10-experiment
+  save_checkpoints: true
+  checkpoint_frequency: 5
+  save_logs: true

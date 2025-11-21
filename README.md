@@ -24,6 +24,7 @@ This allows you to modify the code without reinstalling.
 
 - Python 3.8 or higher
 - numpy >= 1.20.0
+- pyyaml >= 5.1 (for YAML configuration support)
 
 ## CLI Usage
 
@@ -36,14 +37,14 @@ mlx --help
 # Show version
 mlx --version
 
-# Run an experiment
+# Run an experiment with configuration file
+mlx run-experiment --config examples/mnist_config.json
+
+# Dry run with configuration (validates config without execution)
+mlx run-experiment --dry-run --config examples/mnist_config.json
+
+# Run an experiment (legacy mode without config)
 mlx run-experiment my_experiment
-
-# Run with configuration file
-mlx run-experiment my_experiment --config config.yaml
-
-# Dry run (no execution)
-mlx run-experiment --dry-run
 
 # Evaluate experiment results
 mlx eval experiment_123
@@ -72,11 +73,194 @@ model-harness/
 ├── mlx/                    # Main package directory
 │   ├── __init__.py        # Package initialization
 │   ├── __main__.py        # Entry point for python -m mlx
-│   └── cli.py             # Command-line interface
+│   ├── cli.py             # Command-line interface
+│   ├── config.py          # Configuration loading and validation
+│   └── utils/             # Utility modules
+│       ├── __init__.py
+│       └── paths.py       # Path resolution utilities
+├── examples/               # Example configuration files
+│   ├── mnist_config.json  # MNIST experiment config
+│   └── cifar10_config.yaml # CIFAR-10 experiment config
 ├── pyproject.toml         # Project metadata and dependencies
 ├── README.md              # This file
 └── LICENSE                # GPLv3 license
 ```
+
+## Configuration
+
+MLX uses JSON or YAML configuration files to define experiment specifications. Configuration files enable repeatable, non-interactive experiment execution.
+
+### Configuration File Format
+
+Both JSON and YAML formats are supported. The configuration must include:
+
+#### Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Unique name for the experiment |
+| `dataset` | object | Dataset specification (see below) |
+| `model` | object | Model specification (see below) |
+
+#### Optional Fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `description` | string | null | Human-readable experiment description |
+| `training` | object | (defaults) | Training hyperparameters (see below) |
+| `output` | object | (defaults) | Output directory and saving options |
+
+### Dataset Configuration
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Dataset identifier (mnist, cifar10, cifar100, imagenet, custom) |
+| `path` | string | No | Path to dataset files (for custom datasets) |
+| `params` | object | No | Additional dataset-specific parameters |
+
+**Known datasets**: mnist, cifar10, cifar100, imagenet, custom
+
+### Model Configuration
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | string | Yes | Model identifier (resnet, vgg, mobilenet, efficientnet, custom) |
+| `architecture` | string | No | Specific architecture variant |
+| `params` | object | No | Model-specific parameters (e.g., num_classes, dropout) |
+
+**Known model types**: resnet, vgg, mobilenet, efficientnet, custom
+
+### Training Configuration
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `epochs` | integer | 10 | Number of training epochs (must be positive) |
+| `batch_size` | integer | 32 | Batch size for training (must be positive) |
+| `learning_rate` | float | 0.001 | Learning rate (must be positive) |
+| `optimizer` | string | adam | Optimizer name (adam, sgd, rmsprop, adamw) |
+| `seed` | integer | 42 | Random seed for reproducibility |
+| `params` | object | {} | Additional optimizer/training parameters |
+
+### Output Configuration
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `directory` | string | outputs | Output directory path (relative or absolute) |
+| `save_checkpoints` | boolean | true | Whether to save model checkpoints |
+| `checkpoint_frequency` | integer | 1 | Save checkpoint every N epochs |
+| `save_logs` | boolean | true | Whether to save training logs |
+| `params` | object | {} | Additional output parameters |
+
+### Example Configurations
+
+#### JSON Format
+
+See `examples/mnist_config.json`:
+
+```json
+{
+  "name": "mnist-classification",
+  "description": "Basic MNIST digit classification experiment",
+  "dataset": {
+    "name": "mnist",
+    "params": {
+      "download": true,
+      "normalize": true
+    }
+  },
+  "model": {
+    "name": "resnet18",
+    "architecture": "resnet",
+    "params": {
+      "num_classes": 10,
+      "pretrained": false
+    }
+  },
+  "training": {
+    "epochs": 10,
+    "batch_size": 64,
+    "learning_rate": 0.001,
+    "optimizer": "adam",
+    "seed": 42
+  },
+  "output": {
+    "directory": "outputs/mnist-experiment",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 2,
+    "save_logs": true
+  }
+}
+```
+
+#### YAML Format
+
+See `examples/cifar10_config.yaml`:
+
+```yaml
+name: cifar10-classification
+description: CIFAR-10 image classification with data augmentation
+
+dataset:
+  name: cifar10
+  params:
+    download: true
+    augmentation: true
+
+model:
+  name: efficientnet_b0
+  architecture: efficientnet
+  params:
+    num_classes: 10
+    dropout: 0.2
+
+training:
+  epochs: 50
+  batch_size: 128
+  learning_rate: 0.001
+  optimizer: adamw
+  seed: 42
+  params:
+    weight_decay: 0.01
+    warmup_epochs: 5
+
+output:
+  directory: outputs/cifar10-experiment
+  save_checkpoints: true
+  checkpoint_frequency: 5
+  save_logs: true
+```
+
+### Dry-Run Mode
+
+Use dry-run mode to validate configuration without executing training:
+
+```bash
+# Validate JSON config
+mlx run-experiment --dry-run --config examples/mnist_config.json
+
+# Validate YAML config
+mlx run-experiment --dry-run --config examples/cifar10_config.yaml
+```
+
+Dry-run mode will:
+- Load and parse the configuration file
+- Validate all required fields and constraints
+- Resolve output paths
+- Display the complete configuration summary
+- Report any validation errors or warnings
+- Exit without performing training
+
+### Validation and Error Handling
+
+The configuration system provides strict validation:
+
+- **Missing required fields**: Clear error messages identifying missing fields
+- **Invalid values**: Errors for negative epochs, learning rates, etc.
+- **Unknown datasets/models**: Warnings for unrecognized dataset or model names
+- **Unknown configuration keys**: Warnings for typos or unsupported fields
+- **Missing config files**: Actionable error with file path
+- **Invalid JSON/YAML syntax**: Parse errors with line numbers
+- **Path resolution**: Relative paths resolved against repository root
 
 ## Development
 
