@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
-from mlx.utils.paths import resolve_path
+from mlx.utils.paths import resolve_path, validate_path_safety
 
 
 # Check if PyYAML is available
@@ -187,6 +187,14 @@ class OutputConfig:
             )
         elif not self.directory:
             errors.append("Output directory is required")
+        else:
+            # Warn if directory is outside the safe base
+            if not validate_path_safety(self.directory):
+                warnings.warn(
+                    f"Output directory '{self.directory}' resolves outside the repository root. "
+                    f"This may write files to unexpected locations.",
+                    UserWarning
+                )
         
         # Validate checkpoint_frequency type and value
         if not isinstance(self.checkpoint_frequency, int):
@@ -405,6 +413,16 @@ class ConfigLoader:
                     f"Field 'training' must be an object (mapping), "
                     f"but got {type(training_data).__name__}"
                 )
+            
+            # Check for unknown training fields
+            known_training_keys = {"epochs", "batch_size", "learning_rate", "optimizer", "seed", "params"}
+            unknown_training_keys = set(training_data.keys()) - known_training_keys
+            if unknown_training_keys:
+                warnings.warn(
+                    f"Unknown training configuration keys will be ignored: {', '.join(sorted(unknown_training_keys))}",
+                    UserWarning
+                )
+            
             training = TrainingConfig(
                 epochs=training_data.get("epochs", 10),
                 batch_size=training_data.get("batch_size", 32),
@@ -422,6 +440,16 @@ class ConfigLoader:
                     f"Field 'output' must be an object (mapping), "
                     f"but got {type(output_data).__name__}"
                 )
+            
+            # Check for unknown output fields
+            known_output_keys = {"directory", "save_checkpoints", "checkpoint_frequency", "save_logs", "params"}
+            unknown_output_keys = set(output_data.keys()) - known_output_keys
+            if unknown_output_keys:
+                warnings.warn(
+                    f"Unknown output configuration keys will be ignored: {', '.join(sorted(unknown_output_keys))}",
+                    UserWarning
+                )
+            
             output = OutputConfig(
                 directory=output_data.get("directory", "outputs"),
                 save_checkpoints=output_data.get("save_checkpoints", True),

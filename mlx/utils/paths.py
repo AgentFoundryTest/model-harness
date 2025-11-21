@@ -88,7 +88,7 @@ def validate_path_safety(path: Union[str, Path], base_dir: Union[str, Path, None
         base_dir: Base directory that path should be within (defaults to repo root)
         
     Returns:
-        True if path is safe, False otherwise
+        True if path is safe (within base_dir), False otherwise
     """
     path = Path(path).resolve()
     
@@ -97,12 +97,10 @@ def validate_path_safety(path: Union[str, Path], base_dir: Union[str, Path, None
     else:
         base_dir = Path(base_dir).resolve()
     
-    # Check if path is within base_dir or in a reasonable location
+    # Check if path is within base_dir
     try:
         path.relative_to(base_dir)
         return True
     except ValueError:
-        # Path is outside base_dir - this might be okay for some cases
-        # (e.g., user-specified absolute paths for output)
-        # But we should warn about it
-        return True  # Allow but caller should handle warnings
+        # Path is outside base_dir
+        return False
