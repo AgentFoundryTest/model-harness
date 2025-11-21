@@ -242,7 +242,12 @@ class ExperimentConfig:
         """
         errors = []
         
-        if not self.name:
+        # Validate name type and value
+        if not isinstance(self.name, str):
+            errors.append(
+                f"Experiment name must be a string, got {type(self.name).__name__}"
+            )
+        elif not self.name:
             errors.append("Experiment name is required")
         
         # Validate sub-configurations
