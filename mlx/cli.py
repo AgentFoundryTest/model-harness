@@ -6,6 +6,8 @@ import argparse
 import sys
 from typing import List, Optional
 
+from mlx import __version__
+
 
 def create_parser() -> argparse.ArgumentParser:
     """
@@ -23,7 +25,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--version",
         action="version",
-        version="%(prog)s 0.1.0",
+        version=f"%(prog)s {__version__}",
     )
     
     # Create subparsers for commands
@@ -52,7 +54,7 @@ def create_parser() -> argparse.ArgumentParser:
         "experiment_name",
         type=str,
         nargs="?",
-        help="Name of the experiment to run",
+        help="Name of the experiment to run (required unless --dry-run)",
     )
     
     # eval subcommand
@@ -75,7 +77,7 @@ def create_parser() -> argparse.ArgumentParser:
         "experiment_id",
         type=str,
         nargs="?",
-        help="ID of the experiment to evaluate",
+        help="ID of the experiment to evaluate (required unless --dry-run)",
     )
     
     return parser
