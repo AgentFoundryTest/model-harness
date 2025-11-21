@@ -177,6 +177,12 @@ class SyntheticClassificationDataset(BaseDataset):
         if n_classes < 2:
             raise ValueError(f"n_classes must be >= 2, got {n_classes}")
         
+        if n_samples < n_classes:
+            raise ValueError(
+                f"n_samples ({n_samples}) must be >= n_classes ({n_classes}) "
+                f"to ensure each class has at least one sample"
+            )
+        
         if class_sep <= 0:
             raise ValueError(f"class_sep must be positive, got {class_sep}")
         

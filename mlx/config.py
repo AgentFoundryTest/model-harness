@@ -167,6 +167,16 @@ class DatasetConfig:
                     errors.append(
                         f"Dataset param 'n_classes' must be >= 2, got {n_classes}"
                     )
+                
+                # Validate n_samples >= n_classes if both are present
+                if "n_samples" in self.params:
+                    n_samples = self.params["n_samples"]
+                    if isinstance(n_samples, int) and isinstance(n_classes, int):
+                        if n_samples < n_classes:
+                            errors.append(
+                                f"Dataset param 'n_samples' ({n_samples}) must be >= "
+                                f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
+                            )
             
             if "class_sep" in self.params:
                 class_sep = self.params["class_sep"]

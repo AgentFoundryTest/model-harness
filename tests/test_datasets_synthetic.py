@@ -292,6 +292,24 @@ class TestSyntheticClassificationDataset:
         with pytest.raises(ValueError, match="n_classes must be >= 2"):
             SyntheticClassificationDataset(n_samples=100, n_features=5, n_classes=0)
     
+    def test_n_samples_less_than_n_classes(self):
+        """Test that n_samples < n_classes raises error."""
+        with pytest.raises(ValueError, match="n_samples .* must be >= n_classes"):
+            SyntheticClassificationDataset(n_samples=2, n_features=5, n_classes=3)
+        
+        with pytest.raises(ValueError, match="n_samples .* must be >= n_classes"):
+            SyntheticClassificationDataset(n_samples=1, n_features=5, n_classes=5)
+    
+    def test_n_samples_equals_n_classes(self):
+        """Test that n_samples == n_classes works correctly."""
+        dataset = SyntheticClassificationDataset(n_samples=5, n_features=3, n_classes=5)
+        X, y = dataset.generate(seed=42)
+        
+        # Should have exactly one sample per class
+        unique, counts = np.unique(y, return_counts=True)
+        assert len(unique) == 5
+        assert all(count == 1 for count in counts)
+    
     def test_invalid_class_sep(self):
         """Test that invalid class_sep raises error."""
         with pytest.raises(ValueError, match="class_sep must be positive"):
