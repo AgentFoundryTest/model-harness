@@ -59,7 +59,7 @@ class DatasetConfig:
         # Check for unknown dataset names (basic validation)
         # This can be extended with a registry of known datasets
         known_datasets = ["mnist", "cifar10", "cifar100", "imagenet", "custom"]
-        if self.name.lower() not in known_datasets and not self.name.startswith("custom"):
+        if self.name.lower() not in known_datasets and not self.name.lower().startswith("custom"):
             errors.append(
                 f"Unknown dataset '{self.name}'. "
                 f"Known datasets: {', '.join(known_datasets)}"
@@ -187,6 +187,17 @@ class TrainingConfig:
                 errors.append(
                     f"Unknown optimizer '{self.optimizer}'. "
                     f"Known optimizers: {', '.join(known_optimizers)}"
+                )
+        
+        # Validate seed type if provided
+        if self.seed is not None:
+            if isinstance(self.seed, bool):
+                errors.append(
+                    f"Seed must be an integer, got {type(self.seed).__name__}"
+                )
+            elif not isinstance(self.seed, int):
+                errors.append(
+                    f"Seed must be an integer, got {type(self.seed).__name__}"
                 )
         
         return errors
