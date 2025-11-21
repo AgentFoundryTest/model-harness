@@ -302,6 +302,9 @@ class MLP(BaseModel):
             grad_W = np.clip(grad_W, GRADIENT_CLIP_MIN, GRADIENT_CLIP_MAX)
             grad_b = np.clip(grad_b, GRADIENT_CLIP_MIN, GRADIENT_CLIP_MAX)
             
+            # Cache weights before update (needed for correct backprop to previous layer)
+            W_old = self.weights[i].copy()
+            
             # Update weights and biases
             lr = self.optimizer_config.learning_rate
             self.weights[i] -= lr * grad_W
@@ -310,9 +313,9 @@ class MLP(BaseModel):
             # Clip weights to prevent overflow
             self.weights[i] = np.clip(self.weights[i], WEIGHT_CLIP_MIN, WEIGHT_CLIP_MAX)
             
-            # Propagate error to previous layer
+            # Propagate error to previous layer using pre-update weights
             if i > 0:
-                delta = (delta @ self.weights[i].T) * self._activation_derivative(
+                delta = (delta @ W_old.T) * self._activation_derivative(
                     activations[i], self.activation
                 )
         

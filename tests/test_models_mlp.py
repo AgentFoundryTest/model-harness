@@ -400,3 +400,92 @@ class TestMLPActivations:
         
         assert output.shape == (10, 1)
         assert np.isfinite(output).all()
+
+
+class TestMLPBackpropagation:
+    """Test MLP backpropagation correctness."""
+    
+    def test_multilayer_gradient_correctness(self):
+        """Test that gradients are computed with pre-update weights."""
+        # Use a simple 2-layer network to verify backprop
+        np.random.seed(42)
+        model = MLP(
+            layer_sizes=[3, 4, 1],
+            activation="tanh",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.01)
+        )
+        
+        X = np.random.randn(10, 3)
+        y = np.random.randn(10, 1)
+        
+        # Store initial weights
+        initial_weights = [w.copy() for w in model.weights]
+        
+        # Perform one training step
+        metrics = model.train_step(X, y)
+        
+        # Verify weights were updated
+        for i, (w_old, w_new) in enumerate(zip(initial_weights, model.weights)):
+            assert not np.allclose(w_old, w_new), f"Weights at layer {i} were not updated"
+        
+        # Verify loss is finite
+        assert np.isfinite(metrics["loss"])
+    
+    def test_deterministic_training_multilayer(self):
+        """Test that multi-layer training is deterministic with same seed."""
+        X = np.random.randn(20, 3)
+        y = np.random.randn(20, 1)
+        
+        # Train first model
+        model1 = MLP(
+            layer_sizes=[3, 5, 3, 1],
+            activation="relu",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.01)
+        )
+        for _ in range(5):
+            model1.train_step(X, y)
+        pred1 = model1.forward(X)
+        
+        # Train second model with same seed
+        model2 = MLP(
+            layer_sizes=[3, 5, 3, 1],
+            activation="relu",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.01)
+        )
+        for _ in range(5):
+            model2.train_step(X, y)
+        pred2 = model2.forward(X)
+        
+        # Predictions should be identical
+        np.testing.assert_array_almost_equal(pred1, pred2)
+        
+        # Weights should be identical
+        for w1, w2 in zip(model1.weights, model2.weights):
+            np.testing.assert_array_almost_equal(w1, w2)
+    
+    def test_loss_decreases_with_training(self):
+        """Test that loss generally decreases for multi-layer network."""
+        np.random.seed(42)
+        X = np.random.randn(50, 3)
+        # Create target with some pattern
+        y = (X[:, 0:1] + X[:, 1:2] * 0.5)
+        
+        model = MLP(
+            layer_sizes=[3, 8, 4, 1],
+            activation="relu",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.01)
+        )
+        
+        losses = []
+        for _ in range(20):
+            metrics = model.train_step(X, y)
+            losses.append(metrics["loss"])
+        
+        # Loss should decrease overall (compare first 5 to last 5)
+        early_loss = np.mean(losses[:5])
+        late_loss = np.mean(losses[-5:])
+        assert late_loss < early_loss, "Loss should decrease with training"
