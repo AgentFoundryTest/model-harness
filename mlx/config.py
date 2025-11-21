@@ -255,6 +255,20 @@ class OutputConfig:
                 f"Checkpoint frequency must be positive, got {self.checkpoint_frequency}"
             )
         
+        # Validate save_checkpoints type
+        if not isinstance(self.save_checkpoints, bool):
+            errors.append(
+                f"save_checkpoints must be a boolean, "
+                f"got {type(self.save_checkpoints).__name__}"
+            )
+        
+        # Validate save_logs type
+        if not isinstance(self.save_logs, bool):
+            errors.append(
+                f"save_logs must be a boolean, "
+                f"got {type(self.save_logs).__name__}"
+            )
+        
         return errors
     
     def resolve_paths(self, base_dir: Optional[Path] = None) -> Path:
