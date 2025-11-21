@@ -322,6 +322,81 @@ class TestDatasetCreation:
         import numpy as np
         np.testing.assert_array_equal(X1, X2)
         np.testing.assert_array_equal(y1, y2)
+    
+    def test_config_with_seed_parameter(self):
+        """Test that config seed parameter is applied to dataset."""
+        config = DatasetConfig(
+            name="synthetic_regression",
+            params={"n_samples": 50, "seed": 42}
+        )
+        
+        dataset = config.create_dataset()
+        
+        # Dataset should store the seed
+        assert dataset.seed == 42
+        
+        # Should be able to generate without passing seed
+        X, y = dataset.generate()
+        assert X.shape == (50, 10)  # default n_features
+        assert y.shape == (50,)
+    
+    def test_config_with_seed_produces_deterministic_data(self):
+        """Test that config seed produces deterministic data."""
+        config = DatasetConfig(
+            name="synthetic_classification",
+            params={"n_samples": 100, "n_classes": 3, "seed": 123}
+        )
+        
+        dataset = config.create_dataset()
+        
+        # Multiple generations with stored seed should be identical
+        X1, y1 = dataset.generate()
+        X2, y2 = dataset.generate()
+        
+        import numpy as np
+        np.testing.assert_array_equal(X1, X2)
+        np.testing.assert_array_equal(y1, y2)
+    
+    def test_config_without_seed_requires_explicit_seed(self):
+        """Test that config without seed requires explicit seed at generation."""
+        config = DatasetConfig(
+            name="synthetic_regression",
+            params={"n_samples": 50}
+        )
+        
+        dataset = config.create_dataset()
+        
+        # Dataset should have no stored seed
+        assert dataset.seed is None
+        
+        # Should raise error when generating without seed
+        import pytest
+        with pytest.raises(ValueError, match="No seed provided"):
+            dataset.generate()
+        
+        # But should work with explicit seed
+        X, y = dataset.generate(seed=42)
+        assert X.shape == (50, 10)
+    
+    def test_explicit_seed_overrides_config_seed(self):
+        """Test that explicit seed in generate() overrides config seed."""
+        config = DatasetConfig(
+            name="synthetic_regression",
+            params={"n_samples": 50, "seed": 42}
+        )
+        
+        dataset = config.create_dataset()
+        
+        # Generate with default seed
+        X1, y1 = dataset.generate()
+        
+        # Generate with explicit different seed
+        X2, y2 = dataset.generate(seed=123)
+        
+        # Should be different
+        import numpy as np
+        assert not np.array_equal(X1, X2)
+        assert not np.array_equal(y1, y2)
 
 
 class TestDatasetConfigIntegration:

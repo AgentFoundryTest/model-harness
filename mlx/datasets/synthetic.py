@@ -23,6 +23,7 @@ class SyntheticRegressionDataset(BaseDataset):
         n_features: Number of input features
         noise_std: Standard deviation of Gaussian noise
         n_informative: Number of informative features (rest are noise)
+        seed: Optional default seed for generation
     """
     
     def __init__(
@@ -30,7 +31,8 @@ class SyntheticRegressionDataset(BaseDataset):
         n_samples: int = 1000,
         n_features: int = 10,
         noise_std: float = 0.1,
-        n_informative: Optional[int] = None
+        n_informative: Optional[int] = None,
+        seed: Optional[int] = None
     ):
         """
         Initialize synthetic regression dataset.
@@ -40,6 +42,7 @@ class SyntheticRegressionDataset(BaseDataset):
             n_features: Number of features (must be positive)
             noise_std: Standard deviation of noise (must be non-negative)
             n_informative: Number of informative features (defaults to n_features)
+            seed: Optional default seed for reproducible generation
             
         Raises:
             ValueError: If parameters are invalid
@@ -72,10 +75,16 @@ class SyntheticRegressionDataset(BaseDataset):
                 f"Reduce n_samples or n_features to stay under 1000 MB."
             )
         
+        # Validate seed if provided
+        if seed is not None:
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise ValueError(f"seed must be an integer, got {type(seed).__name__}")
+        
         self.n_samples = n_samples
         self.n_features = n_features
         self.noise_std = noise_std
         self.n_informative = n_informative
+        self.seed = seed
         
         self._metadata = DatasetMetadata(
             task_type="regression",
@@ -84,18 +93,32 @@ class SyntheticRegressionDataset(BaseDataset):
             n_classes=None
         )
     
-    def generate(self, seed: int) -> tuple:
+    def generate(self, seed: Optional[int] = None) -> tuple:
         """
         Generate synthetic regression dataset.
         
         Args:
-            seed: Random seed for reproducible generation
+            seed: Random seed for reproducible generation. If not provided,
+                  uses the seed specified during initialization.
             
         Returns:
             Tuple of (X, y) where:
                 X: Feature matrix of shape (n_samples, n_features)
                 y: Target array of shape (n_samples,)
+                
+        Raises:
+            ValueError: If no seed is provided and no default seed was set
         """
+        # Use provided seed or fall back to stored seed
+        if seed is None:
+            seed = self.seed
+        
+        if seed is None:
+            raise ValueError(
+                "No seed provided. Either pass a seed to generate() or "
+                "set a default seed during dataset initialization."
+            )
+        
         # Create seeded RNG for deterministic generation
         rng = np.random.RandomState(seed)
         
@@ -142,6 +165,7 @@ class SyntheticClassificationDataset(BaseDataset):
         n_classes: Number of classes
         class_sep: Separation between class clusters (larger = easier)
         n_informative: Number of informative features (rest are noise)
+        seed: Optional default seed for generation
     """
     
     def __init__(
@@ -150,7 +174,8 @@ class SyntheticClassificationDataset(BaseDataset):
         n_features: int = 10,
         n_classes: int = 2,
         class_sep: float = 1.0,
-        n_informative: Optional[int] = None
+        n_informative: Optional[int] = None,
+        seed: Optional[int] = None
     ):
         """
         Initialize synthetic classification dataset.
@@ -161,6 +186,7 @@ class SyntheticClassificationDataset(BaseDataset):
             n_classes: Number of classes (must be >= 2)
             class_sep: Class separation factor (must be positive)
             n_informative: Number of informative features (defaults to n_features)
+            seed: Optional default seed for reproducible generation
             
         Raises:
             ValueError: If parameters are invalid
@@ -202,6 +228,11 @@ class SyntheticClassificationDataset(BaseDataset):
                 f"Reduce n_samples or n_features to stay under 1000 MB."
             )
         
+        # Validate seed if provided
+        if seed is not None:
+            if not isinstance(seed, int) or isinstance(seed, bool):
+                raise ValueError(f"seed must be an integer, got {type(seed).__name__}")
+        
         # Note: If n_samples is not divisible by n_classes, some classes
         # will have one extra sample to ensure total equals n_samples.
         # This is handled in the generate() method.
@@ -211,6 +242,7 @@ class SyntheticClassificationDataset(BaseDataset):
         self.n_classes = n_classes
         self.class_sep = class_sep
         self.n_informative = n_informative
+        self.seed = seed
         
         self._metadata = DatasetMetadata(
             task_type="classification",
@@ -219,18 +251,32 @@ class SyntheticClassificationDataset(BaseDataset):
             n_classes=n_classes
         )
     
-    def generate(self, seed: int) -> tuple:
+    def generate(self, seed: Optional[int] = None) -> tuple:
         """
         Generate synthetic classification dataset.
         
         Args:
-            seed: Random seed for reproducible generation
+            seed: Random seed for reproducible generation. If not provided,
+                  uses the seed specified during initialization.
             
         Returns:
             Tuple of (X, y) where:
                 X: Feature matrix of shape (n_samples, n_features)
                 y: Class labels of shape (n_samples,) with values in [0, n_classes)
+                
+        Raises:
+            ValueError: If no seed is provided and no default seed was set
         """
+        # Use provided seed or fall back to stored seed
+        if seed is None:
+            seed = self.seed
+        
+        if seed is None:
+            raise ValueError(
+                "No seed provided. Either pass a seed to generate() or "
+                "set a default seed during dataset initialization."
+            )
+        
         # Create seeded RNG for deterministic generation
         rng = np.random.RandomState(seed)
         

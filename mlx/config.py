@@ -226,12 +226,14 @@ class DatasetConfig:
             n_features = self.params.get("n_features", 10)
             noise_std = self.params.get("noise_std", 0.1)
             n_informative = self.params.get("n_informative", None)
+            seed = self.params.get("seed", None)
             
             return SyntheticRegressionDataset(
                 n_samples=n_samples,
                 n_features=n_features,
                 noise_std=noise_std,
-                n_informative=n_informative
+                n_informative=n_informative,
+                seed=seed
             )
         
         elif dataset_name == "synthetic_classification":
@@ -241,13 +243,15 @@ class DatasetConfig:
             n_classes = self.params.get("n_classes", 2)
             class_sep = self.params.get("class_sep", 1.0)
             n_informative = self.params.get("n_informative", None)
+            seed = self.params.get("seed", None)
             
             return SyntheticClassificationDataset(
                 n_samples=n_samples,
                 n_features=n_features,
                 n_classes=n_classes,
                 class_sep=class_sep,
-                n_informative=n_informative
+                n_informative=n_informative,
+                seed=seed
             )
         
         # For other datasets (mnist, cifar10, etc.), return None
