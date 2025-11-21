@@ -7,11 +7,12 @@ and type hints per PEP 484.
 
 import json
 import sys
+import warnings
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
-from mlx.utils.paths import resolve_path, get_repo_root
+from mlx.utils.paths import resolve_path
 
 
 # Check if PyYAML is available
@@ -295,9 +296,9 @@ class ConfigLoader:
         known_keys = {"name", "dataset", "model", "training", "output", "description"}
         unknown_keys = set(data.keys()) - known_keys
         if unknown_keys:
-            print(
-                f"Warning: Unknown configuration keys will be ignored: {', '.join(unknown_keys)}",
-                file=sys.stderr
+            warnings.warn(
+                f"Unknown configuration keys will be ignored: {', '.join(sorted(unknown_keys))}",
+                UserWarning
             )
         
         # Extract required fields

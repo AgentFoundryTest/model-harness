@@ -5,7 +5,6 @@ Handles resolution of relative paths against repository root and
 validates path safety.
 """
 
-import os
 from pathlib import Path
 from typing import Union
 

@@ -122,10 +122,10 @@ def run_experiment(args: argparse.Namespace) -> int:
             print("Validation: PASSED")
             print()
             print("Next steps (if not dry-run):")
-            print("  1. Load dataset: " + config.dataset.name)
-            print("  2. Initialize model: " + config.model.name)
-            print("  3. Train for " + str(config.training.epochs) + " epochs")
-            print("  4. Save results to: " + str(config.output.resolve_paths()))
+            print(f"  1. Load dataset: {config.dataset.name}")
+            print(f"  2. Initialize model: {config.model.name}")
+            print(f"  3. Train for {config.training.epochs} epochs")
+            print(f"  4. Save results to: {config.output.resolve_paths()}")
         else:
             print("DRY RUN: run-experiment")
             if args.experiment_name:
