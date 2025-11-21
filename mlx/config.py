@@ -290,7 +290,7 @@ class ModelConfig:
             errors.append("Model name is required")
         
         # Check for unknown model names (basic validation)
-        known_models = ["resnet", "vgg", "mobilenet", "efficientnet", "custom"]
+        known_models = ["resnet", "vgg", "mobilenet", "efficientnet", "custom", "linear_regression", "mlp"]
         if not any(self.name.lower().startswith(known) for known in known_models):
             errors.append(
                 f"Unknown model '{self.name}'. "

@@ -203,7 +203,171 @@ This ensures:
 | `architecture` | string | No | Specific architecture variant |
 | `params` | object | No | Model-specific parameters (e.g., num_classes, dropout) |
 
-**Known model types**: resnet, vgg, mobilenet, efficientnet, custom
+**Known model types**: resnet, vgg, mobilenet, efficientnet, custom, linear_regression, mlp
+
+## Models
+
+MLX provides built-in model implementations with a strict abstraction layer that ensures consistent training, inference, and serialization APIs.
+
+### Available Models
+
+| Model | Type | Description | When to Use |
+|-------|------|-------------|-------------|
+| `linear_regression` | Regression | Linear regression with closed-form or gradient descent training | Simple linear relationships, interpretable models, baseline comparisons |
+| `mlp` | Regression/Classification | Multi-layer perceptron with configurable layers | Non-linear relationships, small-to-medium datasets, quick prototyping |
+
+### BaseModel Interface
+
+All models implement the `BaseModel` abstract base class, which defines:
+
+- **`forward(X)`**: Compute predictions for input data
+- **`train_step(X, y)`**: Perform a single training step and return metrics
+- **`save(path)`**: Save model parameters to disk
+- **`load(path)`**: Load model parameters from disk
+- **`predict(X)`**: Generate predictions (calls `forward()` after validation)
+
+### Linear Regression
+
+NumPy-based linear regression with support for both analytical (closed-form) and iterative (gradient descent) solutions.
+
+#### Configuration Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `seed` | integer | None | Random seed for deterministic initialization |
+| `use_gradient_descent` | boolean | False | Use gradient descent instead of closed-form solution |
+| `l2_regularization` | float | 0.0 | L2 regularization strength (ridge regression) |
+| `optimizer_config` | object | (defaults) | Optimizer configuration (learning_rate, optimizer_type) |
+
+#### Example Configuration
+
+```json
+{
+  "model": {
+    "name": "linear_regression",
+    "params": {
+      "seed": 42,
+      "use_gradient_descent": false,
+      "l2_regularization": 0.1
+    }
+  },
+  "training": {
+    "learning_rate": 0.01,
+    "epochs": 100
+  }
+}
+```
+
+#### Features
+
+- **Closed-form solution**: Solves normal equations for one-shot training (default)
+- **Gradient descent**: Iterative optimization for large datasets or online learning
+- **Regularization**: L2 penalty (ridge regression) to prevent overfitting
+- **Deterministic**: Same seed produces identical results across runs
+- **Singularity detection**: Warns about near-singular matrices and uses pseudoinverse
+
+#### Limitations
+
+- **Closed-form**: Memory-intensive for large feature sets (O(n_features²))
+- **Gradient descent**: Requires tuning learning rate and multiple epochs
+- **Linear only**: Cannot model non-linear relationships
+
+### Multi-Layer Perceptron (MLP)
+
+Fully-connected neural network with manual backpropagation, supporting regression and classification.
+
+#### Configuration Options
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `layer_sizes` | list[int] | Required | Layer sizes from input to output, e.g., [10, 5, 1] |
+| `activation` | string | "relu" | Hidden layer activation: "relu", "tanh", or "sigmoid" |
+| `output_activation` | string | None | Output activation: None, "sigmoid", or "softmax" |
+| `seed` | integer | None | Random seed for weight initialization |
+| `optimizer_config` | object | (defaults) | Optimizer configuration (learning_rate, optimizer_type) |
+
+#### Example Configuration
+
+```json
+{
+  "model": {
+    "name": "mlp",
+    "params": {
+      "layer_sizes": [20, 10, 5, 1],
+      "activation": "relu",
+      "seed": 42
+    }
+  },
+  "training": {
+    "learning_rate": 0.01,
+    "epochs": 100,
+    "batch_size": 32
+  }
+}
+```
+
+#### Features
+
+- **Flexible architecture**: Configurable depth and width
+- **Multiple activations**: ReLU (default), tanh, sigmoid for hidden layers
+- **Classification support**: Softmax output for multi-class classification
+- **Gradient clipping**: Prevents overflow/underflow during training
+- **Xavier/He initialization**: Proper weight initialization based on activation function
+
+#### Limitations
+
+- **Manual training**: Requires appropriate learning rate and number of epochs
+- **Small-scale**: Best for small-to-medium datasets (no GPU acceleration)
+- **Simple optimizer**: Only supports basic SGD (no momentum, Adam, etc.)
+- **Numerical stability**: Large learning rates or deep networks may diverge
+
+### Model Serialization
+
+All models support saving and loading checkpoints:
+
+```python
+from mlx.models import LinearRegression
+
+# Train model
+model = LinearRegression(seed=42)
+model.train_step(X_train, y_train)
+
+# Save checkpoint
+model.save("outputs/my_model")
+
+# Load checkpoint
+loaded_model = LinearRegression()
+loaded_model.load("outputs/my_model")
+```
+
+Checkpoints include:
+- Model architecture and hyperparameters
+- Trained weights and biases (float64 for cross-platform consistency)
+- Optimizer configuration
+
+### Edge Cases and Safeguards
+
+#### Singular Matrices (Linear Regression)
+
+When feature matrix is singular or near-singular:
+- **Warning issued**: Includes condition number for diagnosis
+- **Fallback to pseudoinverse**: Ensures training completes
+- **Recommendation**: Add regularization or use gradient descent
+
+#### Numerical Overflow (MLP)
+
+To prevent overflow during training:
+- **Gradient clipping**: Gradients clipped to [-10, 10]
+- **Weight clipping**: Weights clipped to [-10, 10]
+- **Activation clipping**: Pre-activation values clipped for tanh/sigmoid
+- **Learning rate warnings**: Warning for learning_rate > 1.0
+
+#### Mismatched Architectures (Load)
+
+Loading checkpoint with wrong architecture:
+- **Validation**: Architecture checked against checkpoint
+- **Descriptive error**: Clear message about mismatch
+- **Example**: Cannot load [10, 5, 1] MLP into [10, 3, 1] model
 
 ### Training Configuration
 
