@@ -165,7 +165,13 @@ class OutputConfig:
         """
         errors = []
         
-        if not self.directory:
+        # Validate directory type
+        if not isinstance(self.directory, str):
+            errors.append(
+                f"Output directory must be a string, "
+                f"got {type(self.directory).__name__}"
+            )
+        elif not self.directory:
             errors.append("Output directory is required")
         
         # Validate checkpoint_frequency type and value
