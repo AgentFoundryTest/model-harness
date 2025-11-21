@@ -145,7 +145,7 @@ Both JSON and YAML formats are supported. The configuration must include:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `directory` | string | outputs | Output directory path (relative or absolute) |
+| `directory` | string | outputs | Output directory path (must resolve within repository root) |
 | `save_checkpoints` | boolean | true | Whether to save model checkpoints |
 | `checkpoint_frequency` | integer | 1 | Save checkpoint every N epochs |
 | `save_logs` | boolean | true | Whether to save training logs |
@@ -261,6 +261,7 @@ The configuration system provides strict validation:
 - **Missing config files**: Actionable error with file path
 - **Invalid JSON/YAML syntax**: Parse errors with line numbers
 - **Path resolution**: Relative paths resolved against repository root
+- **Output directory safety**: Output paths must resolve within the repository root (paths escaping the workspace are rejected)
 
 ## Development
 
