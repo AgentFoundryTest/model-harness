@@ -291,7 +291,11 @@ class MLP(BaseModel):
         loss = self._compute_loss(y_reshaped, predictions)
         
         # Backward pass
-        delta = predictions - y_reshaped  # Gradient of MSE loss
+        delta = predictions - y_reshaped  # Gradient of MSE loss w.r.t. predictions
+        
+        # Apply output activation derivative if present (chain rule)
+        if self.output_activation is not None:
+            delta = delta * self._activation_derivative(predictions, self.output_activation)
         
         for i in reversed(range(len(self.weights))):
             # Compute gradients

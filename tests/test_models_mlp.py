@@ -489,3 +489,114 @@ class TestMLPBackpropagation:
         early_loss = np.mean(losses[:5])
         late_loss = np.mean(losses[-5:])
         assert late_loss < early_loss, "Loss should decrease with training"
+
+
+class TestMLPOutputActivations:
+    """Test MLP with output activations."""
+    
+    def test_sigmoid_output_convergence(self):
+        """Test that sigmoid output activation allows convergence."""
+        np.random.seed(42)
+        X = np.random.randn(50, 3)
+        # Binary targets for sigmoid output
+        y = (X[:, 0] + X[:, 1] > 0).astype(float).reshape(-1, 1)
+        
+        model = MLP(
+            layer_sizes=[3, 5, 1],
+            activation="relu",
+            output_activation="sigmoid",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.1)
+        )
+        
+        losses = []
+        for _ in range(30):
+            metrics = model.train_step(X, y)
+            losses.append(metrics["loss"])
+        
+        # Loss should decrease
+        assert losses[-1] < losses[0], "Loss should decrease with sigmoid output"
+        
+        # Predictions should be in [0, 1]
+        predictions = model.forward(X)
+        assert np.all(predictions >= 0) and np.all(predictions <= 1)
+    
+    def test_softmax_output_convergence(self):
+        """Test that softmax output activation allows convergence."""
+        np.random.seed(42)
+        X = np.random.randn(50, 3)
+        # Multi-class targets for softmax output
+        y = ((X[:, 0] + X[:, 1]) > 0).astype(int)
+        y = np.where(X[:, 2] > 0, 2, y)  # 3 classes
+        
+        model = MLP(
+            layer_sizes=[3, 8, 3],
+            activation="relu",
+            output_activation="softmax",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.05)
+        )
+        
+        losses = []
+        for _ in range(30):
+            metrics = model.train_step(X, y)
+            losses.append(metrics["loss"])
+        
+        # Loss should decrease
+        assert losses[-1] < losses[0], "Loss should decrease with softmax output"
+        
+        # Predictions should sum to 1
+        predictions = model.forward(X)
+        np.testing.assert_array_almost_equal(
+            np.sum(predictions, axis=1),
+            np.ones(50),
+            decimal=5
+        )
+    
+    def test_output_activation_gradient_flow(self):
+        """Test that gradients flow correctly through output activation."""
+        np.random.seed(42)
+        X = np.random.randn(20, 3)
+        y = np.random.rand(20, 1)  # Targets in [0, 1]
+        
+        model = MLP(
+            layer_sizes=[3, 4, 1],
+            activation="tanh",
+            output_activation="sigmoid",
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.1)
+        )
+        
+        # Store initial weights
+        initial_weights = [w.copy() for w in model.weights]
+        
+        # Train for a few steps
+        for _ in range(5):
+            model.train_step(X, y)
+        
+        # All weights should have changed (gradient flow through output activation)
+        for i, (w_old, w_new) in enumerate(zip(initial_weights, model.weights)):
+            assert not np.allclose(w_old, w_new, atol=1e-6), \
+                f"Weights at layer {i} did not update (gradient may not be flowing)"
+    
+    def test_no_output_activation_still_works(self):
+        """Test that models without output activation still work correctly."""
+        np.random.seed(42)
+        X = np.random.randn(30, 3)
+        y = X[:, 0:1] + 2*X[:, 1:2]
+        
+        model = MLP(
+            layer_sizes=[3, 5, 1],
+            activation="relu",
+            output_activation=None,
+            seed=42,
+            optimizer_config=OptimizerConfig(learning_rate=0.01)
+        )
+        
+        losses = []
+        for _ in range(20):
+            metrics = model.train_step(X, y)
+            losses.append(metrics["loss"])
+        
+        # Loss should decrease
+        assert losses[-1] < losses[0], "Loss should decrease without output activation"
