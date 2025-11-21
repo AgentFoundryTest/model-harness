@@ -156,27 +156,30 @@ class DatasetConfig:
         
         # Classification-specific validation
         if self.name.lower() == "synthetic_classification":
+            # Get values with defaults for validation
+            n_samples = self.params.get("n_samples", 1000)
+            n_classes = self.params.get("n_classes", 2)
+            
             if "n_classes" in self.params:
-                n_classes = self.params["n_classes"]
-                if not isinstance(n_classes, int) or isinstance(n_classes, bool):
+                n_classes_param = self.params["n_classes"]
+                if not isinstance(n_classes_param, int) or isinstance(n_classes_param, bool):
                     errors.append(
                         f"Dataset param 'n_classes' must be an integer, "
-                        f"got {type(n_classes).__name__}"
+                        f"got {type(n_classes_param).__name__}"
                     )
-                elif n_classes < 2:
+                elif n_classes_param < 2:
                     errors.append(
-                        f"Dataset param 'n_classes' must be >= 2, got {n_classes}"
+                        f"Dataset param 'n_classes' must be >= 2, got {n_classes_param}"
                     )
-                
-                # Validate n_samples >= n_classes (accounting for defaults)
-                # Default n_samples is 1000 for synthetic datasets
-                n_samples = self.params.get("n_samples", 1000)
-                if isinstance(n_samples, int) and isinstance(n_classes, int):
-                    if n_samples < n_classes:
-                        errors.append(
-                            f"Dataset param 'n_samples' ({n_samples}) must be >= "
-                            f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
-                        )
+            
+            # Validate n_samples >= n_classes (accounting for defaults)
+            # This check applies whether n_samples, n_classes, or both are provided
+            if isinstance(n_samples, int) and isinstance(n_classes, int):
+                if n_samples < n_classes:
+                    errors.append(
+                        f"Dataset param 'n_samples' ({n_samples}) must be >= "
+                        f"'n_classes' ({n_classes}) to ensure each class has at least one sample"
+                    )
             
             if "class_sep" in self.params:
                 class_sep = self.params["class_sep"]

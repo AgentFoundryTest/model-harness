@@ -92,6 +92,15 @@ class TestDatasetConfigValidation:
         errors = config.validate()
         assert any("n_samples" in err and "n_classes" in err and "at least one sample" in err for err in errors)
     
+    def test_n_samples_less_than_default_n_classes(self):
+        """Test n_samples less than default n_classes when n_classes not provided."""
+        config = DatasetConfig(
+            name="synthetic_classification",
+            params={"n_samples": 1}  # default n_classes is 2
+        )
+        errors = config.validate()
+        assert any("n_samples" in err and "n_classes" in err and "at least one sample" in err for err in errors)
+    
     def test_invalid_class_sep(self):
         """Test invalid class_sep parameter."""
         config = DatasetConfig(
