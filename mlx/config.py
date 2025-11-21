@@ -375,7 +375,7 @@ class ConfigLoader:
                 raise ValueError("Missing required field: 'name'")
             
             dataset_data = data.get("dataset")
-            if not dataset_data:
+            if dataset_data is None:
                 raise ValueError("Missing required field: 'dataset'")
             
             # Validate dataset is a mapping
@@ -386,7 +386,7 @@ class ConfigLoader:
                 )
             
             model_data = data.get("model")
-            if not model_data:
+            if model_data is None:
                 raise ValueError("Missing required field: 'model'")
             
             # Validate model is a mapping

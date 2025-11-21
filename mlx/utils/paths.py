@@ -90,16 +90,23 @@ def validate_path_safety(path: Union[str, Path], base_dir: Union[str, Path, None
     Returns:
         True if path is safe (within base_dir), False otherwise
     """
-    path = Path(path).resolve()
-    
+    # Establish base_dir first, before resolving the path
     if base_dir is None:
         base_dir = get_repo_root()
     else:
         base_dir = Path(base_dir).resolve()
     
-    # Check if path is within base_dir
+    # Now resolve the path relative to base_dir if it's relative
+    path_obj = Path(path)
+    if not path_obj.is_absolute():
+        # Resolve relative paths against base_dir
+        resolved_path = (base_dir / path_obj).resolve()
+    else:
+        resolved_path = path_obj.resolve()
+    
+    # Check if resolved path is within base_dir
     try:
-        path.relative_to(base_dir)
+        resolved_path.relative_to(base_dir)
         return True
     except ValueError:
         # Path is outside base_dir
