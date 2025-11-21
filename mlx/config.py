@@ -279,12 +279,12 @@ class ConfigLoader:
             )
     
     @staticmethod
-    def _parse_config(data: Dict[str, Any]) -> ExperimentConfig:
+    def _parse_config(data: Any) -> ExperimentConfig:
         """
         Parse configuration dictionary into ExperimentConfig.
         
         Args:
-            data: Configuration dictionary
+            data: Configuration data (must be a dictionary)
             
         Returns:
             Parsed ExperimentConfig
