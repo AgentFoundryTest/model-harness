@@ -106,21 +106,42 @@ class TrainingConfig:
         """
         errors = []
         
-        if self.epochs <= 0:
+        # Validate epochs type and value
+        if not isinstance(self.epochs, int):
+            errors.append(
+                f"Epochs must be an integer, got {type(self.epochs).__name__}"
+            )
+        elif self.epochs <= 0:
             errors.append(f"Epochs must be positive, got {self.epochs}")
         
-        if self.batch_size <= 0:
+        # Validate batch_size type and value
+        if not isinstance(self.batch_size, int):
+            errors.append(
+                f"Batch size must be an integer, got {type(self.batch_size).__name__}"
+            )
+        elif self.batch_size <= 0:
             errors.append(f"Batch size must be positive, got {self.batch_size}")
         
-        if self.learning_rate <= 0:
+        # Validate learning_rate type and value
+        if not isinstance(self.learning_rate, (int, float)):
+            errors.append(
+                f"Learning rate must be a number, got {type(self.learning_rate).__name__}"
+            )
+        elif self.learning_rate <= 0:
             errors.append(f"Learning rate must be positive, got {self.learning_rate}")
         
-        known_optimizers = ["adam", "sgd", "rmsprop", "adamw"]
-        if self.optimizer.lower() not in known_optimizers:
+        # Validate optimizer type and value
+        if not isinstance(self.optimizer, str):
             errors.append(
-                f"Unknown optimizer '{self.optimizer}'. "
-                f"Known optimizers: {', '.join(known_optimizers)}"
+                f"Optimizer must be a string, got {type(self.optimizer).__name__}"
             )
+        else:
+            known_optimizers = ["adam", "sgd", "rmsprop", "adamw"]
+            if self.optimizer.lower() not in known_optimizers:
+                errors.append(
+                    f"Unknown optimizer '{self.optimizer}'. "
+                    f"Known optimizers: {', '.join(known_optimizers)}"
+                )
         
         return errors
 
@@ -147,7 +168,13 @@ class OutputConfig:
         if not self.directory:
             errors.append("Output directory is required")
         
-        if self.checkpoint_frequency <= 0:
+        # Validate checkpoint_frequency type and value
+        if not isinstance(self.checkpoint_frequency, int):
+            errors.append(
+                f"Checkpoint frequency must be an integer, "
+                f"got {type(self.checkpoint_frequency).__name__}"
+            )
+        elif self.checkpoint_frequency <= 0:
             errors.append(
                 f"Checkpoint frequency must be positive, got {self.checkpoint_frequency}"
             )
@@ -318,9 +345,23 @@ class ConfigLoader:
             if not dataset_data:
                 raise ValueError("Missing required field: 'dataset'")
             
+            # Validate dataset is a mapping
+            if not isinstance(dataset_data, dict):
+                raise ValueError(
+                    f"Field 'dataset' must be an object (mapping), "
+                    f"but got {type(dataset_data).__name__}"
+                )
+            
             model_data = data.get("model")
             if not model_data:
                 raise ValueError("Missing required field: 'model'")
+            
+            # Validate model is a mapping
+            if not isinstance(model_data, dict):
+                raise ValueError(
+                    f"Field 'model' must be an object (mapping), "
+                    f"but got {type(model_data).__name__}"
+                )
             
             # Parse dataset config
             dataset = DatasetConfig(
@@ -338,6 +379,12 @@ class ConfigLoader:
             
             # Parse training config (with defaults)
             training_data = data.get("training", {})
+            # Validate training is a mapping if provided
+            if training_data and not isinstance(training_data, dict):
+                raise ValueError(
+                    f"Field 'training' must be an object (mapping), "
+                    f"but got {type(training_data).__name__}"
+                )
             training = TrainingConfig(
                 epochs=training_data.get("epochs", 10),
                 batch_size=training_data.get("batch_size", 32),
@@ -349,6 +396,12 @@ class ConfigLoader:
             
             # Parse output config (with defaults)
             output_data = data.get("output", {})
+            # Validate output is a mapping if provided
+            if output_data and not isinstance(output_data, dict):
+                raise ValueError(
+                    f"Field 'output' must be an object (mapping), "
+                    f"but got {type(output_data).__name__}"
+                )
             output = OutputConfig(
                 directory=output_data.get("directory", "outputs"),
                 save_checkpoints=output_data.get("save_checkpoints", True),
