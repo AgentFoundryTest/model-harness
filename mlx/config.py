@@ -380,7 +380,7 @@ class ConfigLoader:
             # Parse training config (with defaults)
             training_data = data.get("training", {})
             # Validate training is a mapping if provided
-            if training_data is not None and not isinstance(training_data, dict):
+            if not isinstance(training_data, dict):
                 raise ValueError(
                     f"Field 'training' must be an object (mapping), "
                     f"but got {type(training_data).__name__}"
@@ -397,7 +397,7 @@ class ConfigLoader:
             # Parse output config (with defaults)
             output_data = data.get("output", {})
             # Validate output is a mapping if provided
-            if output_data is not None and not isinstance(output_data, dict):
+            if not isinstance(output_data, dict):
                 raise ValueError(
                     f"Field 'output' must be an object (mapping), "
                     f"but got {type(output_data).__name__}"
