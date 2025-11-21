@@ -200,6 +200,13 @@ class BaseModel(ABC):
         if X.ndim != 2:
             raise ValueError(f"X must be 2D array, got shape {X.shape}")
         
+        # Validate dtype is numeric
+        if not np.issubdtype(X.dtype, np.number):
+            raise ValueError(
+                f"X must have numeric dtype, got {X.dtype}. "
+                "Supported types: float, int, or complex."
+            )
+        
         if not np.isfinite(X).all():
             raise ValueError("X contains NaN or Inf values")
         
@@ -217,6 +224,13 @@ class BaseModel(ABC):
                 raise ValueError(
                     f"X and y must have same number of samples: "
                     f"{X.shape[0]} vs {y.shape[0]}"
+                )
+            
+            # Validate dtype is numeric
+            if not np.issubdtype(y.dtype, np.number):
+                raise ValueError(
+                    f"y must have numeric dtype, got {y.dtype}. "
+                    "Supported types: float, int, or complex."
                 )
             
             if not np.isfinite(y).all():

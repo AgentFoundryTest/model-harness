@@ -221,3 +221,44 @@ class TestBaseModel:
         
         with pytest.raises(ValueError, match="y contains NaN or Inf"):
             model.validate_input(X, y)
+    
+    def test_validate_input_non_numeric_dtype_X(self):
+        """Test validate_input rejects non-numeric dtype for X."""
+        model = DummyModel()
+        X = np.array([["a", "b"], ["c", "d"]], dtype=object)
+        
+        with pytest.raises(ValueError, match="X must have numeric dtype"):
+            model.validate_input(X)
+    
+    def test_validate_input_string_dtype_X(self):
+        """Test validate_input rejects string dtype for X."""
+        model = DummyModel()
+        X = np.array([["hello", "world"], ["foo", "bar"]], dtype=str)
+        
+        with pytest.raises(ValueError, match="X must have numeric dtype"):
+            model.validate_input(X)
+    
+    def test_validate_input_non_numeric_dtype_y(self):
+        """Test validate_input rejects non-numeric dtype for y."""
+        model = DummyModel()
+        X = np.random.randn(10, 5)
+        y = np.array(["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"], dtype=object)
+        
+        with pytest.raises(ValueError, match="y must have numeric dtype"):
+            model.validate_input(X, y)
+    
+    def test_validate_input_accepts_int_dtype(self):
+        """Test validate_input accepts integer dtype."""
+        model = DummyModel()
+        X = np.random.randint(0, 10, size=(10, 5))
+        y = np.random.randint(0, 10, size=10)
+        
+        model.validate_input(X, y)  # Should not raise
+    
+    def test_validate_input_accepts_float_dtype(self):
+        """Test validate_input accepts float dtype."""
+        model = DummyModel()
+        X = np.random.randn(10, 5).astype(np.float32)
+        y = np.random.randn(10).astype(np.float64)
+        
+        model.validate_input(X, y)  # Should not raise
