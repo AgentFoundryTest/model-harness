@@ -60,6 +60,20 @@ class DatasetConfig:
             )
         
         return errors
+    
+    def resolve_path(self, base_dir: Optional[Path] = None) -> Optional[Path]:
+        """
+        Resolve dataset path if provided.
+        
+        Args:
+            base_dir: Base directory for relative paths
+            
+        Returns:
+            Resolved dataset path or None if no path specified
+        """
+        if self.path:
+            return resolve_path(self.path, base_dir)
+        return None
 
 
 @dataclass
@@ -422,11 +436,19 @@ class ConfigLoader:
                     UserWarning
                 )
             
+            # Validate dataset params is a mapping if provided
+            dataset_params = dataset_data.get("params", {})
+            if not isinstance(dataset_params, dict):
+                raise ValueError(
+                    f"Field 'dataset.params' must be an object (mapping), "
+                    f"but got {type(dataset_params).__name__}"
+                )
+            
             # Parse dataset config
             dataset = DatasetConfig(
                 name=dataset_data.get("name", ""),
                 path=dataset_data.get("path"),
-                params=dataset_data.get("params", {})
+                params=dataset_params
             )
             
             # Check for unknown model fields
@@ -438,11 +460,19 @@ class ConfigLoader:
                     UserWarning
                 )
             
+            # Validate model params is a mapping if provided
+            model_params = model_data.get("params", {})
+            if not isinstance(model_params, dict):
+                raise ValueError(
+                    f"Field 'model.params' must be an object (mapping), "
+                    f"but got {type(model_params).__name__}"
+                )
+            
             # Parse model config
             model = ModelConfig(
                 name=model_data.get("name", ""),
                 architecture=model_data.get("architecture"),
-                params=model_data.get("params", {})
+                params=model_params
             )
             
             # Parse training config (with defaults)
@@ -463,13 +493,21 @@ class ConfigLoader:
                     UserWarning
                 )
             
+            # Validate training params is a mapping if provided
+            training_params = training_data.get("params", {})
+            if not isinstance(training_params, dict):
+                raise ValueError(
+                    f"Field 'training.params' must be an object (mapping), "
+                    f"but got {type(training_params).__name__}"
+                )
+            
             training = TrainingConfig(
                 epochs=training_data.get("epochs", 10),
                 batch_size=training_data.get("batch_size", 32),
                 learning_rate=training_data.get("learning_rate", 0.001),
                 optimizer=training_data.get("optimizer", "adam"),
                 seed=training_data.get("seed", 42),
-                params=training_data.get("params", {})
+                params=training_params
             )
             
             # Parse output config (with defaults)
@@ -490,12 +528,20 @@ class ConfigLoader:
                     UserWarning
                 )
             
+            # Validate output params is a mapping if provided
+            output_params = output_data.get("params", {})
+            if not isinstance(output_params, dict):
+                raise ValueError(
+                    f"Field 'output.params' must be an object (mapping), "
+                    f"but got {type(output_params).__name__}"
+                )
+            
             output = OutputConfig(
                 directory=output_data.get("directory", "outputs"),
                 save_checkpoints=output_data.get("save_checkpoints", True),
                 checkpoint_frequency=output_data.get("checkpoint_frequency", 1),
                 save_logs=output_data.get("save_logs", True),
-                params=output_data.get("params", {})
+                params=output_params
             )
             
             # Create experiment config
@@ -541,6 +587,9 @@ def print_config_summary(config: ExperimentConfig) -> None:
     print(f"  Name: {config.dataset.name}")
     if config.dataset.path:
         print(f"  Path: {config.dataset.path}")
+        resolved_dataset_path = config.dataset.resolve_path()
+        if resolved_dataset_path:
+            print(f"  Resolved Path: {resolved_dataset_path}")
     if config.dataset.params:
         print(f"  Parameters: {config.dataset.params}")
     print()
