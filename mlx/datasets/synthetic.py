@@ -196,11 +196,9 @@ class SyntheticClassificationDataset(BaseDataset):
                 f"Reduce n_samples or n_features to stay under 1000 MB."
             )
         
-        # Warn about potential class imbalance
-        samples_per_class = n_samples // n_classes
-        if samples_per_class * n_classes != n_samples:
-            # Will have slight imbalance - some classes get one extra sample
-            pass
+        # Note: If n_samples is not divisible by n_classes, some classes
+        # will have one extra sample to ensure total equals n_samples.
+        # This is handled in the generate() method.
         
         self.n_samples = n_samples
         self.n_features = n_features
