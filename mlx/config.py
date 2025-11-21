@@ -121,7 +121,11 @@ class TrainingConfig:
         errors = []
         
         # Validate epochs type and value
-        if not isinstance(self.epochs, int):
+        if isinstance(self.epochs, bool):
+            errors.append(
+                f"Epochs must be an integer, got {type(self.epochs).__name__}"
+            )
+        elif not isinstance(self.epochs, int):
             errors.append(
                 f"Epochs must be an integer, got {type(self.epochs).__name__}"
             )
@@ -129,7 +133,11 @@ class TrainingConfig:
             errors.append(f"Epochs must be positive, got {self.epochs}")
         
         # Validate batch_size type and value
-        if not isinstance(self.batch_size, int):
+        if isinstance(self.batch_size, bool):
+            errors.append(
+                f"Batch size must be an integer, got {type(self.batch_size).__name__}"
+            )
+        elif not isinstance(self.batch_size, int):
             errors.append(
                 f"Batch size must be an integer, got {type(self.batch_size).__name__}"
             )
@@ -137,7 +145,11 @@ class TrainingConfig:
             errors.append(f"Batch size must be positive, got {self.batch_size}")
         
         # Validate learning_rate type and value
-        if not isinstance(self.learning_rate, (int, float)):
+        if isinstance(self.learning_rate, bool):
+            errors.append(
+                f"Learning rate must be a number, got {type(self.learning_rate).__name__}"
+            )
+        elif not isinstance(self.learning_rate, (int, float)):
             errors.append(
                 f"Learning rate must be a number, got {type(self.learning_rate).__name__}"
             )
@@ -197,7 +209,12 @@ class OutputConfig:
                 )
         
         # Validate checkpoint_frequency type and value
-        if not isinstance(self.checkpoint_frequency, int):
+        if isinstance(self.checkpoint_frequency, bool):
+            errors.append(
+                f"Checkpoint frequency must be an integer, "
+                f"got {type(self.checkpoint_frequency).__name__}"
+            )
+        elif not isinstance(self.checkpoint_frequency, int):
             errors.append(
                 f"Checkpoint frequency must be an integer, "
                 f"got {type(self.checkpoint_frequency).__name__}"
