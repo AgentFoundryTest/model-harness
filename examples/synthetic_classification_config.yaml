@@ -1,0 +1,30 @@
+name: synthetic-classification-experiment
+description: Multi-class synthetic classification with separable clusters
+
+dataset:
+  name: synthetic_classification
+  params:
+    n_samples: 1500
+    n_features: 10
+    n_classes: 5
+    class_sep: 2.0
+    n_informative: 8
+
+model:
+  name: custom
+  params:
+    type: logistic_regression
+    multi_class: true
+
+training:
+  epochs: 100
+  batch_size: 64
+  learning_rate: 0.001
+  optimizer: adam
+  seed: 42
+
+output:
+  directory: outputs/synthetic-classification
+  save_checkpoints: true
+  checkpoint_frequency: 20
+  save_logs: true

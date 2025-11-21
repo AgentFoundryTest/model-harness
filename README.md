@@ -114,11 +114,86 @@ Both JSON and YAML formats are supported. The configuration must include:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Dataset identifier (mnist, cifar10, cifar100, imagenet, custom) |
+| `name` | string | Yes | Dataset identifier (see below) |
 | `path` | string | No | Path to dataset files (for custom datasets) |
 | `params` | object | No | Additional dataset-specific parameters |
 
-**Known datasets**: mnist, cifar10, cifar100, imagenet, custom
+**Known datasets**: mnist, cifar10, cifar100, imagenet, custom, synthetic_regression, synthetic_classification
+
+#### Synthetic Datasets
+
+MLX provides built-in synthetic dataset generators for offline experiments with guaranteed reproducibility:
+
+**synthetic_regression**: Linear regression with Gaussian noise
+- Generates data following: y = X @ weights + noise
+- Useful for testing regression models without external data dependencies
+
+**synthetic_classification**: Separable cluster-based classification
+- Generates Gaussian clusters centered around class-specific means
+- Useful for testing classification models without external data dependencies
+
+#### Synthetic Dataset Parameters
+
+All synthetic datasets support the following parameters in the `params` field:
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_samples` | integer | 1000 | Number of samples to generate (must be positive) |
+| `n_features` | integer | 10 | Number of input features (must be positive) |
+| `n_informative` | integer | n_features | Number of informative features; rest are noise |
+| `seed` | integer | - | Random seed for generation (use training.seed if not specified) |
+
+**Regression-specific parameters** (`synthetic_regression`):
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `noise_std` | float | 0.1 | Standard deviation of Gaussian noise (must be non-negative) |
+
+**Classification-specific parameters** (`synthetic_classification`):
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `n_classes` | integer | 2 | Number of classes (must be >= 2) |
+| `class_sep` | float | 1.0 | Class separation factor (larger = easier, must be positive) |
+
+#### Synthetic Dataset Example
+
+```json
+{
+  "name": "synthetic-regression-experiment",
+  "dataset": {
+    "name": "synthetic_regression",
+    "params": {
+      "n_samples": 1000,
+      "n_features": 20,
+      "n_informative": 15,
+      "noise_std": 0.2
+    }
+  },
+  "model": {
+    "name": "custom"
+  },
+  "training": {
+    "epochs": 10,
+    "batch_size": 32,
+    "seed": 42
+  }
+}
+```
+
+#### Determinism and Reproducibility
+
+Synthetic datasets guarantee deterministic generation:
+- Calling `generate(seed=42)` multiple times produces identical results
+- Same seed across different runs produces identical datasets
+- No network I/O or disk reads required
+- Memory usage validated (datasets > 1GB are rejected)
+
+This ensures:
+- Repeatable experiments for testing and debugging
+- Consistent metric comparisons across runs
+- Isolated outputs even with concurrent runs (via distinct seed/directory)
+
 
 ### Model Configuration
 
