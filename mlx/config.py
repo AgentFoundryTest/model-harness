@@ -50,6 +50,12 @@ class DatasetConfig:
         if not self.name:
             errors.append("Dataset name is required")
         
+        # Validate path type if provided
+        if self.path is not None and not isinstance(self.path, str):
+            errors.append(
+                f"Dataset path must be a string, got {type(self.path).__name__}"
+            )
+        
         # Check for unknown dataset names (basic validation)
         # This can be extended with a registry of known datasets
         known_datasets = ["mnist", "cifar10", "cifar100", "imagenet", "custom"]
