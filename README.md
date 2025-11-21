@@ -256,7 +256,7 @@ The configuration system provides strict validation:
 
 - **Missing required fields**: Clear error messages identifying missing fields
 - **Invalid values**: Errors for negative epochs, learning rates, etc.
-- **Unknown datasets/models**: Warnings for unrecognized dataset or model names
+- **Unknown datasets/models**: Errors for unrecognized dataset or model names (aborts validation)
 - **Unknown configuration keys**: Warnings for typos or unsupported fields
 - **Missing config files**: Actionable error with file path
 - **Invalid JSON/YAML syntax**: Parse errors with line numbers

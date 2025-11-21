@@ -292,6 +292,13 @@ class ConfigLoader:
         Raises:
             ValueError: If required fields are missing or invalid
         """
+        # Validate that data is a dictionary
+        if not isinstance(data, dict):
+            raise ValueError(
+                "Configuration must be a JSON/YAML object (dictionary), "
+                f"but got {type(data).__name__}"
+            )
+        
         # Check for unknown top-level keys
         known_keys = {"name", "dataset", "model", "training", "output", "description"}
         unknown_keys = set(data.keys()) - known_keys
