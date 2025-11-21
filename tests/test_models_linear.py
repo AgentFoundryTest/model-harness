@@ -6,7 +6,6 @@ import pytest
 import numpy as np
 from pathlib import Path
 import tempfile
-import shutil
 
 from mlx.models.linear import LinearRegression
 from mlx.models.base import OptimizerConfig

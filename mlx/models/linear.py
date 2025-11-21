@@ -13,6 +13,10 @@ import json
 from mlx.models.base import BaseModel, OptimizerConfig
 
 
+# Default seed for deterministic initialization when no seed provided
+DEFAULT_SEED = 42
+
+
 class LinearRegression(BaseModel):
     """
     Linear regression model with closed-form and gradient descent training.
@@ -110,11 +114,12 @@ class LinearRegression(BaseModel):
         # Initialize model parameters if first training step
         if self.weights is None:
             self.n_features = X.shape[1]
+            # Use random initialization with seed for reproducibility
             if self.seed is not None:
                 rng = np.random.RandomState(self.seed)
-                self.weights = rng.randn(self.n_features) * 0.01
             else:
-                self.weights = np.zeros(self.n_features)
+                rng = np.random.RandomState(DEFAULT_SEED)
+            self.weights = rng.randn(self.n_features) * 0.01
             self.bias = 0.0
         
         if self.use_gradient_descent:

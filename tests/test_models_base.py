@@ -5,7 +5,6 @@ Tests for base model abstraction.
 import pytest
 import numpy as np
 from pathlib import Path
-import tempfile
 
 from mlx.models.base import BaseModel, OptimizerConfig
 

@@ -14,6 +14,18 @@ import json
 from mlx.models.base import BaseModel, OptimizerConfig
 
 
+# Default seed for deterministic initialization when no seed provided
+DEFAULT_SEED = 42
+
+# Clipping bounds to prevent numerical overflow
+WEIGHT_CLIP_MIN = -10.0
+WEIGHT_CLIP_MAX = 10.0
+GRADIENT_CLIP_MIN = -10.0
+GRADIENT_CLIP_MAX = 10.0
+ACTIVATION_CLIP_MIN = -10.0
+ACTIVATION_CLIP_MAX = 10.0
+
+
 class MLP(BaseModel):
     """
     Multi-layer perceptron with manual backpropagation.
@@ -101,7 +113,7 @@ class MLP(BaseModel):
         if self.seed is not None:
             rng = np.random.RandomState(self.seed)
         else:
-            rng = np.random.RandomState(42)  # Default seed for determinism
+            rng = np.random.RandomState(DEFAULT_SEED)
         
         for i in range(len(self.layer_sizes) - 1):
             n_in = self.layer_sizes[i]
@@ -115,7 +127,7 @@ class MLP(BaseModel):
             
             # Clip initial weights to prevent overflow
             weights = rng.randn(n_in, n_out) * std
-            weights = np.clip(weights, -10.0, 10.0)
+            weights = np.clip(weights, WEIGHT_CLIP_MIN, WEIGHT_CLIP_MAX)
             
             self.weights.append(weights)
             self.biases.append(np.zeros(n_out))
@@ -135,16 +147,16 @@ class MLP(BaseModel):
             return np.maximum(0, Z)
         elif activation == "tanh":
             # Clip to prevent overflow
-            Z_clipped = np.clip(Z, -10, 10)
+            Z_clipped = np.clip(Z, ACTIVATION_CLIP_MIN, ACTIVATION_CLIP_MAX)
             return np.tanh(Z_clipped)
         elif activation == "sigmoid":
             # Clip to prevent overflow
-            Z_clipped = np.clip(Z, -10, 10)
+            Z_clipped = np.clip(Z, ACTIVATION_CLIP_MIN, ACTIVATION_CLIP_MAX)
             return 1.0 / (1.0 + np.exp(-Z_clipped))
         elif activation == "softmax":
             # Numerical stability: subtract max
             Z_shifted = Z - np.max(Z, axis=1, keepdims=True)
-            exp_Z = np.exp(np.clip(Z_shifted, -10, 10))
+            exp_Z = np.exp(np.clip(Z_shifted, ACTIVATION_CLIP_MIN, ACTIVATION_CLIP_MAX))
             return exp_Z / np.sum(exp_Z, axis=1, keepdims=True)
         else:
             return Z
@@ -287,8 +299,8 @@ class MLP(BaseModel):
             grad_b = np.mean(delta, axis=0)
             
             # Clip gradients to prevent overflow
-            grad_W = np.clip(grad_W, -10.0, 10.0)
-            grad_b = np.clip(grad_b, -10.0, 10.0)
+            grad_W = np.clip(grad_W, GRADIENT_CLIP_MIN, GRADIENT_CLIP_MAX)
+            grad_b = np.clip(grad_b, GRADIENT_CLIP_MIN, GRADIENT_CLIP_MAX)
             
             # Update weights and biases
             lr = self.optimizer_config.learning_rate
@@ -296,7 +308,7 @@ class MLP(BaseModel):
             self.biases[i] -= lr * grad_b
             
             # Clip weights to prevent overflow
-            self.weights[i] = np.clip(self.weights[i], -10.0, 10.0)
+            self.weights[i] = np.clip(self.weights[i], WEIGHT_CLIP_MIN, WEIGHT_CLIP_MAX)
             
             # Propagate error to previous layer
             if i > 0:
