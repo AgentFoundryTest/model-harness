@@ -433,7 +433,7 @@ class ConfigLoader:
         # Extract required fields
         try:
             name = data.get("name")
-            if not name:
+            if name is None:
                 raise ValueError("Missing required field: 'name'")
             
             dataset_data = data.get("dataset")
