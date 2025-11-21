@@ -396,12 +396,30 @@ class ConfigLoader:
                     f"but got {type(model_data).__name__}"
                 )
             
+            # Check for unknown dataset fields
+            known_dataset_keys = {"name", "path", "params"}
+            unknown_dataset_keys = set(dataset_data.keys()) - known_dataset_keys
+            if unknown_dataset_keys:
+                warnings.warn(
+                    f"Unknown dataset configuration keys will be ignored: {', '.join(sorted(unknown_dataset_keys))}",
+                    UserWarning
+                )
+            
             # Parse dataset config
             dataset = DatasetConfig(
                 name=dataset_data.get("name", ""),
                 path=dataset_data.get("path"),
                 params=dataset_data.get("params", {})
             )
+            
+            # Check for unknown model fields
+            known_model_keys = {"name", "architecture", "params"}
+            unknown_model_keys = set(model_data.keys()) - known_model_keys
+            if unknown_model_keys:
+                warnings.warn(
+                    f"Unknown model configuration keys will be ignored: {', '.join(sorted(unknown_model_keys))}",
+                    UserWarning
+                )
             
             # Parse model config
             model = ModelConfig(
