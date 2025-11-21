@@ -231,12 +231,11 @@ class OutputConfig:
         elif not self.directory:
             errors.append("Output directory is required")
         else:
-            # Warn if directory is outside the safe base
+            # Error if directory is outside the safe base
             if not validate_path_safety(self.directory):
-                warnings.warn(
+                errors.append(
                     f"Output directory '{self.directory}' resolves outside the repository root. "
-                    f"This may write files to unexpected locations.",
-                    UserWarning
+                    f"Output paths must be within the repository workspace."
                 )
         
         # Validate checkpoint_frequency type and value
