@@ -172,15 +172,18 @@ The `pytest.ini` file configures test behavior:
 Key settings for determinism:
 
 ```ini
-# Clean up temp directories immediately
-tmp_path_retention_count = 0
-tmp_path_retention_policy = none
+# Temporary directory cleanup
+# pytest automatically cleans up tmp_path directories after each test
+# Note: tmp_path_retention_count/policy require pytest>=7.3
+# These are commented out to maintain compatibility with pytest>=7.0
 
 # Allow expected warnings from numerical operations
 filterwarnings =
     default::UserWarning:mlx.models.linear
     default::UserWarning:mlx.models.mlp
 ```
+
+**Note**: If using pytest>=7.3, you can uncomment `tmp_path_retention_count` and `tmp_path_retention_policy` in pytest.ini to retain temporary directories for debugging.
 
 ### Continuous Integration
 
