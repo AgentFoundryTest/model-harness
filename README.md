@@ -143,6 +143,102 @@ mlx eval --dry-run --config my_config.json --run-dir runs/my-experiment/20241122
 # - Steps that would be executed
 ```
 
+### Viewing Run History
+
+MLX automatically tracks all experiment runs in `runs/index.json`. You can view and query this history:
+
+```bash
+# View the complete run history
+cat runs/index.json | python -m json.tool
+
+# List all runs for a specific experiment
+cat runs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
+
+# View summary of a specific run
+cat runs/my-experiment/20241122_143025/summary.json | python -m json.tool
+
+# View metrics for a specific run
+cat runs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
+
+# View human-readable metrics summary
+cat runs/my-experiment/20241122_143025/metrics/metrics.md
+```
+
+#### Run History Structure
+
+The `runs/index.json` file contains a list of all experiments:
+
+```json
+{
+  "runs": [
+    {
+      "experiment": "my-experiment",
+      "timestamp": "20241122_143025",
+      "run_dir": "my-experiment/20241122_143025",
+      "created_at": "2024-11-22T14:30:25.123456"
+    }
+  ]
+}
+```
+
+#### Programmatic History Access
+
+You can also access run history programmatically using Python:
+
+```python
+from mlx.history import list_all_runs, get_runs_by_experiment, generate_markdown_summary
+from pathlib import Path
+
+# List all runs
+runs = list_all_runs(Path("runs/index.json"))
+print(f"Total runs: {len(runs)}")
+
+# Get runs for specific experiment
+my_runs = get_runs_by_experiment(Path("runs/index.json"), "my-experiment")
+for run in my_runs:
+    print(f"  {run['timestamp']}: {run['run_dir']}")
+
+# Generate Markdown summary
+summary = generate_markdown_summary(runs, output_path=Path("runs/HISTORY.md"))
+print(summary)
+```
+
+### Multi-Experiment Runs
+
+Run multiple experiments sequentially by providing a JSON array of configurations:
+
+```bash
+# Create multi-experiment config
+cat > multi_config.json << 'EOF'
+[
+  {
+    "name": "experiment-1",
+    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 100}},
+    "model": {"name": "linear_regression"},
+    "training": {"epochs": 10}
+  },
+  {
+    "name": "experiment-2",
+    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 200}},
+    "model": {"name": "linear_regression"},
+    "training": {"epochs": 10}
+  }
+]
+EOF
+
+# Dry run multi-experiment
+mlx run-experiment --dry-run --config multi_config.json
+
+# Run all experiments sequentially
+mlx run-experiment --config multi_config.json
+```
+
+**Behavior:**
+- Experiments execute in order
+- First failure stops remaining experiments
+- Each experiment gets its own timestamped directory
+- All runs are tracked in `runs/index.json`
+
 ### Command-Line Options
 
 #### run-experiment

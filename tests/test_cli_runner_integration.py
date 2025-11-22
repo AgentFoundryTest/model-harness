@@ -9,7 +9,7 @@ from unittest.mock import patch, MagicMock
 import tempfile
 import shutil
 
-from mlx.config import ExperimentConfig, DatasetConfig, ModelConfig, TrainingConfig, OutputConfig
+from mlx.config import ExperimentConfig, DatasetConfig, ModelConfig, TrainingConfig, OutputConfig, ConfigLoader
 from mlx.runner import run_experiment, run_evaluation, run_multi_experiment, RunnerError
 from mlx.cli import main
 
@@ -158,6 +158,42 @@ class TestMultiExperiment:
         
         # Cleanup
         shutil.rmtree("test_runs", ignore_errors=True)
+    
+    def test_load_multi_experiment_config_from_file(self, tmp_path):
+        """Test loading multi-experiment config from file."""
+        config_file = tmp_path / "multi_config.json"
+        config_data = [
+            {
+                "name": "exp-1",
+                "dataset": {"name": "synthetic_regression"},
+                "model": {"name": "linear_regression"},
+                "training": {"epochs": 1},
+                "output": {"directory": "test_runs"}
+            },
+            {
+                "name": "exp-2",
+                "dataset": {"name": "synthetic_regression"},
+                "model": {"name": "linear_regression"},
+                "training": {"epochs": 1},
+                "output": {"directory": "test_runs"}
+            }
+        ]
+        config_file.write_text(json.dumps(config_data))
+        
+        configs = ConfigLoader.load_from_file(config_file)
+        
+        assert isinstance(configs, list)
+        assert len(configs) == 2
+        assert configs[0].name == "exp-1"
+        assert configs[1].name == "exp-2"
+    
+    def test_load_empty_list_raises_error(self, tmp_path):
+        """Test that loading empty config list raises error."""
+        config_file = tmp_path / "empty.json"
+        config_file.write_text("[]")
+        
+        with pytest.raises(ValueError, match="Configuration list is empty"):
+            ConfigLoader.load_from_file(config_file)
 
 
 class TestCLIIntegration:

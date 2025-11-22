@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from mlx import __version__
 from mlx.config import ConfigLoader, print_config_summary
-from mlx.runner import run_experiment, run_evaluation, RunnerError
+from mlx.runner import run_experiment, run_evaluation, run_multi_experiment, RunnerError
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -113,10 +113,10 @@ def run_experiment_cmd(args: argparse.Namespace) -> int:
         Exit code (0 for success, non-zero for failure)
     """
     # Load configuration if provided
-    config = None
+    config_or_configs = None
     if args.config:
         try:
-            config = ConfigLoader.load_from_file(args.config)
+            config_or_configs = ConfigLoader.load_from_file(args.config)
         except FileNotFoundError as e:
             print(f"Error: {e}", file=sys.stderr)
             return 1
@@ -129,17 +129,32 @@ def run_experiment_cmd(args: argparse.Namespace) -> int:
     
     # Handle dry-run mode
     if args.dry_run:
-        if config:
-            # Print loaded configuration
-            print_config_summary(config)
-            print()
-            
-            # Show what would be executed
-            try:
-                run_experiment(config, dry_run=True)
-            except Exception as e:
-                print(f"Error during dry run: {e}", file=sys.stderr)
-                return 1
+        if config_or_configs:
+            # Check if it's a list of configs
+            if isinstance(config_or_configs, list):
+                print(f"DRY RUN MODE - Multi-experiment run ({len(config_or_configs)} experiments)")
+                print()
+                for i, config in enumerate(config_or_configs, 1):
+                    print(f"--- Experiment {i}/{len(config_or_configs)} ---")
+                    print_config_summary(config)
+                    print()
+                    try:
+                        run_experiment(config, dry_run=True)
+                    except Exception as e:
+                        print(f"Error during dry run: {e}", file=sys.stderr)
+                        return 1
+                    print()
+            else:
+                # Single config
+                print_config_summary(config_or_configs)
+                print()
+                
+                # Show what would be executed
+                try:
+                    run_experiment(config_or_configs, dry_run=True)
+                except Exception as e:
+                    print(f"Error during dry run: {e}", file=sys.stderr)
+                    return 1
         else:
             print("DRY RUN MODE - No execution will occur")
             print()
@@ -156,14 +171,19 @@ def run_experiment_cmd(args: argparse.Namespace) -> int:
         return 0
     
     # Non-dry-run mode requires config
-    if not config:
+    if not config_or_configs:
         print("Error: --config is required when not in dry-run mode", file=sys.stderr)
         print("       Use --config to specify experiment configuration.", file=sys.stderr)
         return 1
     
-    # Execute experiment
+    # Execute experiment(s)
     try:
-        run_experiment(config, dry_run=False)
+        if isinstance(config_or_configs, list):
+            # Multi-experiment run
+            run_multi_experiment(config_or_configs, dry_run=False)
+        else:
+            # Single experiment
+            run_experiment(config_or_configs, dry_run=False)
         return 0
     except RunnerError as e:
         print(f"Error: {e}", file=sys.stderr)

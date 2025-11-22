@@ -564,15 +564,15 @@ class ConfigLoader:
     """Loader for experiment configurations from JSON/YAML files."""
     
     @staticmethod
-    def load_from_file(config_path: Union[str, Path]) -> ExperimentConfig:
+    def load_from_file(config_path: Union[str, Path]) -> Union[ExperimentConfig, List[ExperimentConfig]]:
         """
-        Load experiment configuration from a file.
+        Load experiment configuration(s) from a file.
         
         Args:
             config_path: Path to configuration file (JSON or YAML)
             
         Returns:
-            Loaded and validated ExperimentConfig
+            Single ExperimentConfig or list of ExperimentConfig for multi-experiment runs
             
         Raises:
             FileNotFoundError: If config file doesn't exist
@@ -597,8 +597,15 @@ class ConfigLoader:
                 f"Supported formats: .json, .yaml, .yml"
             )
         
-        # Parse and validate
-        return ConfigLoader._parse_config(data)
+        # Parse and validate - handle both single config and list of configs
+        if isinstance(data, list):
+            # Multi-experiment config
+            if not data:
+                raise ValueError("Configuration list is empty")
+            return [ConfigLoader._parse_config(item) for item in data]
+        else:
+            # Single experiment config
+            return ConfigLoader._parse_config(data)
     
     @staticmethod
     def _load_json(path: Path) -> Dict[str, Any]:

@@ -1,0 +1,68 @@
+[
+  {
+    "name": "multi-exp-lr-small",
+    "description": "Linear regression with small dataset",
+    "dataset": {
+      "name": "synthetic_regression",
+      "params": {
+        "n_samples": 100,
+        "n_features": 5,
+        "noise_std": 0.1,
+        "seed": 42
+      }
+    },
+    "model": {
+      "name": "linear_regression",
+      "params": {
+        "seed": 42,
+        "use_gradient_descent": true
+      }
+    },
+    "training": {
+      "epochs": 10,
+      "batch_size": 32,
+      "learning_rate": 0.01,
+      "optimizer": "sgd",
+      "seed": 42
+    },
+    "output": {
+      "directory": "runs",
+      "save_checkpoints": true,
+      "checkpoint_frequency": 5,
+      "save_logs": true
+    }
+  },
+  {
+    "name": "multi-exp-lr-large",
+    "description": "Linear regression with larger dataset",
+    "dataset": {
+      "name": "synthetic_regression",
+      "params": {
+        "n_samples": 200,
+        "n_features": 10,
+        "noise_std": 0.2,
+        "seed": 43
+      }
+    },
+    "model": {
+      "name": "linear_regression",
+      "params": {
+        "seed": 43,
+        "use_gradient_descent": true
+      }
+    },
+    "training": {
+      "epochs": 10,
+      "batch_size": 32,
+      "learning_rate": 0.01,
+      "optimizer": "sgd",
+      "seed": 43
+    },
+    "output": {
+      "directory": "runs",
+      "save_checkpoints": true,
+      "checkpoint_frequency": 5,
+      "save_logs": true
+    }
+  }
+]
