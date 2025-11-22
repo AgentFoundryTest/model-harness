@@ -729,7 +729,8 @@ mlx eval --dry-run --run-dir outputs/my-experiment/20251122_143025
 
 ```bash
 # Useful for evaluating on different dataset configurations
-mlx eval --config my-config.json --run-dir runs/my-experiment/20251122_143025
+# Note: Adjust path based on output.directory setting (default: outputs/)
+mlx eval --config my-config.json --run-dir outputs/my-experiment/20251122_143025
 ```
 
 ### Evaluation Output
@@ -741,7 +742,7 @@ RUNNING EVALUATION
 
 [1/4] Loading configuration from run directory...
       ✓ Configuration loaded
-[2/4] Loading evaluator from: runs/my-experiment/20251122_143025...
+[2/4] Loading evaluator from: outputs/my-experiment/20251122_143025...
       ✓ Evaluator loaded
 [3/4] Regenerating dataset: synthetic_regression...
       ✓ Dataset regenerated
