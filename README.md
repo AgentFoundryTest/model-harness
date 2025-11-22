@@ -57,24 +57,6 @@ pytest tests/test_models_linear.py::TestLinearRegressionClosedForm
 pytest tests/test_datasets_synthetic.py::TestSyntheticRegressionDataset::test_deterministic_generation
 ```
 
-#### Test Categories
-
-Tests can be run by category using markers:
-
-```bash
-# Run only unit tests (fast)
-pytest -m unit
-
-# Skip slow tests
-pytest -m "not slow"
-
-# Run integration tests only
-pytest -m integration
-
-# Run determinism tests
-pytest -m determinism
-```
-
 ### Test Coverage
 
 The comprehensive test suite covers:
