@@ -79,31 +79,31 @@ pytest -m determinism
 
 The test suite includes 258+ tests covering:
 
-- **Configuration validation** (`tests/test_config_datasets.py`): 54 tests
+- **Configuration validation** (`tests/test_config_datasets.py`)
   - Valid and invalid config parsing
   - Type checking and constraint validation
   - Dataset parameter validation
   - Error message correctness
 
-- **Dataset generation** (`tests/test_datasets_synthetic.py`, `tests/test_datasets_base.py`): 50+ tests
+- **Dataset generation** (`tests/test_datasets_synthetic.py`, `tests/test_datasets_base.py`)
   - Deterministic generation (same seed → same data)
   - Seed independence (different seeds → different data)
   - Metadata validation
   - Memory limits and edge cases
 
-- **Model implementations** (`tests/test_models_*.py`): 60+ tests
+- **Model implementations** (`tests/test_models_*.py`)
   - BaseModel API contract compliance
   - Model training and gradient updates
   - Serialization and checkpoint loading
   - Numerical stability and edge cases
 
-- **Training pipeline** (`tests/test_training_integration.py`, `tests/test_output_manager.py`): 30+ tests
+- **Training pipeline** (`tests/test_training_integration.py`, `tests/test_output_manager.py`)
   - End-to-end training workflows
   - Checkpoint saving and loading
   - Metrics computation and serialization
   - Output directory management
 
-- **Metrics and serialization** (`tests/test_metrics_writer.py`, `tests/test_serialization.py`): 40+ tests
+- **Metrics and serialization** (`tests/test_metrics_writer.py`, `tests/test_serialization.py`)
   - NumPy type handling
   - NaN/Inf sanitization
   - JSON encoding with custom types
@@ -222,17 +222,15 @@ Tests verify proper handling of edge cases:
 
 ### Optional Dependencies
 
-Some features require optional dependencies:
+Some features may require optional dependencies. The test suite is designed to run with only the core dependencies (numpy, pyyaml, pytest):
 
 ```bash
-# Install plotting dependencies (optional)
+# Core testing works without additional dependencies
+pytest
+
+# Optional: Install plotting dependencies for visualization features
 pip install matplotlib seaborn
-
-# Tests skip plotting if not installed
-pytest  # Automatically skips plotting tests
 ```
-
-Tests automatically detect missing optional dependencies and skip related tests with clear messages.
 
 ### Troubleshooting Tests
 
