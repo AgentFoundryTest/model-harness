@@ -1,0 +1,35 @@
+{
+  "name": "linear-regression-example",
+  "description": "Linear regression on synthetic data with gradient descent",
+  "dataset": {
+    "name": "synthetic_regression",
+    "params": {
+      "n_samples": 1000,
+      "n_features": 10,
+      "n_informative": 8,
+      "noise_std": 0.1,
+      "seed": 42
+    }
+  },
+  "model": {
+    "name": "linear_regression",
+    "params": {
+      "seed": 42,
+      "use_gradient_descent": true,
+      "l2_regularization": 0.01
+    }
+  },
+  "training": {
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "optimizer": "sgd",
+    "seed": 42
+  },
+  "output": {
+    "directory": "runs",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 10,
+    "save_logs": true
+  }
+}
