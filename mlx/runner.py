@@ -307,14 +307,25 @@ def run_evaluation(
         print("DRY RUN - EVALUATION PLAN")
         print("=" * 60)
         print()
+        
+        # Validate that either config_path or run_dir is provided (same as execution path)
+        if not config_path and not run_dir:
+            raise RunnerError("Either config_path or run_dir must be provided")
+        
+        # Validate that run_dir is provided (required for evaluation)
+        if not run_dir:
+            raise RunnerError(
+                "run_dir must be provided for evaluation. "
+                "This should be the path to a completed training run."
+            )
+        
         if config_path:
             print(f"Config: {config_path}")
             
             # Validate config file (same as non-dry-run path)
             _validate_eval_config(config_path)
         
-        if run_dir:
-            print(f"Run directory: {run_dir}")
+        print(f"Run directory: {run_dir}")
         print(f"Checkpoint: {checkpoint_name}")
         print()
         print("Steps:")

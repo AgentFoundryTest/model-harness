@@ -101,6 +101,23 @@ class TestRunnerEvaluation:
         with pytest.raises(RunnerError, match="run_dir must be provided"):
             run_evaluation(config_path=None, run_dir=None, dry_run=False)
     
+    def test_eval_dry_run_requires_run_dir(self, tmp_path):
+        """Test that dry-run evaluation also requires run_dir."""
+        # Create a config file
+        config_file = tmp_path / "config.json"
+        config_data = {
+            "name": "test-exp",
+            "dataset": {"name": "synthetic_regression"},
+            "model": {"name": "linear_regression"},
+            "training": {"epochs": 1},
+            "output": {"directory": "test_runs"}
+        }
+        config_file.write_text(json.dumps(config_data))
+        
+        # Dry-run should fail without run_dir
+        with pytest.raises(RunnerError, match="run_dir must be provided"):
+            run_evaluation(config_path=config_file, run_dir=None, dry_run=True)
+    
     def test_eval_missing_run_dir(self, tmp_path):
         """Test error when run directory doesn't exist."""
         missing_dir = tmp_path / "nonexistent"
