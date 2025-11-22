@@ -304,16 +304,9 @@ class MLP(BaseModel):
             # dL/dz_j = Σ_i (dL/da_i * da_i/dz_j)
             # where da_i/dz_j = a_i * (δ_ij - a_j)
             # This simplifies to: dL/dz = a ⊙ (dL/da - Σ_k(dL/da_k * a_k))
-            # For each sample in the batch
-            delta_new = np.zeros_like(delta)
-            for sample_idx in range(delta.shape[0]):
-                pred_sample = predictions[sample_idx]  # (n_classes,)
-                delta_sample = delta[sample_idx]  # (n_classes,)
-                # Compute Jacobian-vector product for this sample
-                # J @ v = pred ⊙ (v - (pred • v))
-                dot_product = np.dot(pred_sample, delta_sample)
-                delta_new[sample_idx] = pred_sample * (delta_sample - dot_product)
-            delta = delta_new
+            # Vectorized: delta_new = predictions * (delta - sum(predictions * delta))
+            dot_product = np.sum(predictions * delta, axis=1, keepdims=True)
+            delta = predictions * (delta - dot_product)
         elif self.output_activation is not None:
             # For sigmoid and other activations, use element-wise derivative
             delta = delta * self._activation_derivative(predictions, self.output_activation)
