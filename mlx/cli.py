@@ -22,6 +22,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="mlx",
         description="ML experiment harness for running and evaluating experiments",
+        epilog="For detailed usage guide and examples, see: docs/usage.md",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     
@@ -42,6 +43,11 @@ def create_parser() -> argparse.ArgumentParser:
     run_parser = subparsers.add_parser(
         "run-experiment",
         help="Run a machine learning experiment",
+        epilog="Examples:\n"
+               "  mlx run-experiment --dry-run --config experiments/example.json\n"
+               "  mlx run-experiment --config experiments/example.json\n"
+               "\nFor more details, see: docs/usage.md",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     run_parser.add_argument(
         "--dry-run",
@@ -57,13 +63,20 @@ def create_parser() -> argparse.ArgumentParser:
         "experiment_name",
         type=str,
         nargs="?",
-        help="Name of the experiment to run (required unless --dry-run)",
+        help="(Deprecated: experiment name is read from config file)",
     )
     
     # eval subcommand
     eval_parser = subparsers.add_parser(
         "eval",
         help="Evaluate experiment results",
+        epilog="Examples:\n"
+               "  mlx eval --dry-run --run-dir runs/my-experiment/20251122_143025\n"
+               "  mlx eval --run-dir runs/my-experiment/20251122_143025\n"
+               "  mlx eval --run-dir runs/my-experiment/20251122_143025 --checkpoint checkpoint_epoch_20\n"
+               "\nNote: Bundled example configs use 'runs/' directory. Default is 'outputs/' (configurable).\n"
+               "For more details, see: docs/usage.md",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     eval_parser.add_argument(
         "--dry-run",

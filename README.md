@@ -30,6 +30,45 @@ This installs the package in editable mode along with pytest and other developme
 
 - pytest >= 7.0 (for running tests)
 
+## Experiment Lifecycle Overview
+
+MLX follows a structured workflow for running machine learning experiments:
+
+1. **Configuration** - Define experiment parameters in JSON or YAML
+2. **Validation** - Use `--dry-run` to validate config before execution
+3. **Execution** - Run experiment and train model
+4. **Inspection** - Review outputs (metrics, checkpoints, logs)
+5. **Evaluation** - Re-evaluate trained models on datasets
+6. **History** - Track all runs via `<output-dir>/index.json`
+
+**Key Concepts:**
+- **Deterministic execution**: Set seeds in dataset, model, and training for reproducibility
+- **Timestamped outputs**: Each run gets a unique directory `<output-dir>/<experiment>/<timestamp>/`
+- **Multiple formats**: Metrics saved as JSON, NDJSON (streaming), and Markdown
+- **Checkpoint management**: Save model state at configurable intervals
+- **Local-only**: No network I/O, all operations on local filesystem
+
+**Quick Example:**
+```bash
+# 1. Validate configuration
+mlx run-experiment --dry-run --config experiments/example.json
+
+# 2. Run experiment
+mlx run-experiment --config experiments/example.json
+# Output: runs/example-comprehensive/20251122_143025/
+
+# 3. Inspect metrics
+cat runs/example-comprehensive/20251122_143025/metrics/metrics.md
+
+# 4. Evaluate model
+mlx eval --run-dir runs/example-comprehensive/20251122_143025
+
+# 5. View run history
+cat runs/index.json | python -m json.tool
+```
+
+For detailed workflow documentation, see **[docs/usage.md](docs/usage.md)**.
+
 ## Testing
 
 MLX includes a comprehensive automated test suite to ensure reliability and deterministic behavior.
@@ -274,7 +313,9 @@ pytest --durations=10
 
 ## CLI Usage
 
-After installation, the `mlx` command will be available in your PATH:
+After installation, the `mlx` command will be available in your PATH.
+
+> **📖 For a comprehensive end-to-end tutorial with detailed examples, see [docs/usage.md](docs/usage.md)**
 
 ### Quick Start
 
@@ -291,7 +332,7 @@ mlx run-experiment --config examples/linear_regression_config.json
 # Dry run (validates config without execution)
 mlx run-experiment --dry-run --config examples/linear_regression_config.json
 
-# Evaluate a trained model
+# Evaluate a trained model (path depends on output.directory in config - this uses "runs")
 mlx eval --config examples/linear_regression_config.json --run-dir runs/my-experiment/20241122_143025
 ```
 
@@ -354,7 +395,7 @@ mlx run-experiment --config my_config.json
 Evaluate a trained model without retraining:
 
 ```bash
-# Option 1: Provide both config and run directory
+# Option 1: Provide both config and run directory (path matches output.directory from config above: "runs")
 mlx eval --config my_config.json --run-dir runs/my-linear-regression/20241122_143025
 
 # Option 2: Use run directory only (config loaded from run directory)
@@ -391,28 +432,31 @@ mlx eval --dry-run --config my_config.json --run-dir runs/my-experiment/20241122
 
 ### Viewing Run History
 
-MLX automatically tracks all experiment runs in `runs/index.json`. You can view and query this history:
+MLX automatically tracks all experiment runs in `<output-dir>/index.json` (by default: `outputs/index.json`). You can view and query this history:
 
 ```bash
-# View the complete run history
+# View the complete run history (adjust path based on your output.directory config)
+cat outputs/index.json | python -m json.tool
+
+# If using custom output directory (e.g., "runs" as in examples):
 cat runs/index.json | python -m json.tool
 
 # List all runs for a specific experiment
-cat runs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
+cat outputs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
 
 # View summary of a specific run
-cat runs/my-experiment/20241122_143025/summary.json | python -m json.tool
+cat outputs/my-experiment/20241122_143025/summary.json | python -m json.tool
 
 # View metrics for a specific run
-cat runs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
+cat outputs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
 
 # View human-readable metrics summary
-cat runs/my-experiment/20241122_143025/metrics/metrics.md
+cat outputs/my-experiment/20241122_143025/metrics/metrics.md
 ```
 
 #### Run History Structure
 
-The `runs/index.json` file contains a list of all experiments:
+The `<output-dir>/index.json` file contains a list of all experiments:
 
 ```json
 {
@@ -454,36 +498,18 @@ print(summary)
 Run multiple experiments sequentially by providing a JSON array of configurations:
 
 ```bash
-# Create multi-experiment config
-cat > multi_config.json << 'EOF'
-[
-  {
-    "name": "experiment-1",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 100}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  },
-  {
-    "name": "experiment-2",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 200}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  }
-]
-EOF
-
-# Dry run multi-experiment
-mlx run-experiment --dry-run --config multi_config.json
+# Use the provided multi-experiment config
+mlx run-experiment --dry-run --config experiments/multi_example.json
 
 # Run all experiments sequentially
-mlx run-experiment --config multi_config.json
+mlx run-experiment --config experiments/multi_example.json
 ```
 
 **Behavior:**
 - Experiments execute in order
 - First failure stops remaining experiments
 - Each experiment gets its own timestamped directory
-- All runs are tracked in `runs/index.json`
+- All runs are tracked in `<output-dir>/index.json`
 
 ### Command-Line Options
 
@@ -516,7 +542,7 @@ You can also invoke the CLI using Python's module syntax:
 ```bash
 python -m mlx --help
 python -m mlx run-experiment --config my_config.json
-python -m mlx eval --run-dir runs/my-experiment/20241122_143025
+python -m mlx eval --run-dir outputs/my-experiment/20241122_143025
 ```
 
 ### Output Structure
@@ -554,7 +580,7 @@ Error: Configuration validation failed:
 ```bash
 # Error: Unknown dataset
 Error: Configuration validation failed:
-  - Unknown dataset 'my_dataset'. Known datasets: mnist, cifar10, synthetic_regression, ...
+  - Unknown dataset 'my_dataset'. Currently supported: synthetic_regression, synthetic_classification
 
 # Solution: Use a supported dataset or check spelling
 ```
@@ -652,6 +678,15 @@ model-harness/
 
 MLX uses JSON or YAML configuration files to define experiment specifications. Configuration files enable repeatable, non-interactive experiment execution.
 
+**Sample Configurations:**
+- `experiments/example.json` / `experiments/example.yaml` - Comprehensive single experiment example
+- `experiments/multi_example.json` - Multi-experiment configuration with regression and classification
+- `examples/linear_regression_config.json` - Linear regression with gradient descent
+- `examples/synthetic_regression_config.json` - Basic synthetic data experiment
+- `examples/multi_experiment_config.json` - Sequential multi-experiment runs
+
+For detailed configuration guide and examples, see **[docs/usage.md](docs/usage.md)**.
+
 ### Configuration File Format
 
 Both JSON and YAML formats are supported. The configuration must include:
@@ -680,7 +715,9 @@ Both JSON and YAML formats are supported. The configuration must include:
 | `path` | string | No | Path to dataset files (for custom datasets) |
 | `params` | object | No | Additional dataset-specific parameters |
 
-**Known datasets**: mnist, cifar10, cifar100, imagenet, custom, synthetic_regression, synthetic_classification
+**Currently supported datasets**: `synthetic_regression`, `synthetic_classification`
+
+**Note**: Other datasets (`mnist`, `cifar10`, `cifar100`, `imagenet`) are listed in examples but not yet implemented. Using them will result in an error.
 
 #### Synthetic Datasets
 
@@ -761,11 +798,13 @@ This ensures:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Model identifier (resnet, vgg, mobilenet, efficientnet, custom) |
-| `architecture` | string | No | Specific architecture variant |
-| `params` | object | No | Model-specific parameters (e.g., num_classes, dropout) |
+| `name` | string | Yes | Model identifier (`linear_regression`, `mlp`) |
+| `architecture` | string | No | Specific architecture variant (for future CNN support) |
+| `params` | object | No | Model-specific parameters (e.g., layer_sizes, seed) |
 
-**Known model types**: resnet, vgg, mobilenet, efficientnet, custom, linear_regression, mlp
+**Currently supported models**: `linear_regression`, `mlp`
+
+**Note**: Other models (`resnet`, `vgg`, `mobilenet`, `efficientnet`) are listed in examples but not yet implemented. Using them will result in an error.
 
 ## Models
 
@@ -950,7 +989,7 @@ The `TrainingLoop` class coordinates epoch-based training with:
 The `OutputManager` creates organized run directories:
 - Pattern: `runs/<experiment>/<timestamp>/`
 - Subdirectories: `checkpoints/`, `metrics/`
-- Optional `runs/index.json` for tracking all runs
+- Optional `<output-dir>/index.json` for tracking all runs
 - Unique timestamp-based naming prevents conflicts
 
 #### Metrics Writer
@@ -1061,7 +1100,7 @@ Human-readable Markdown summary with tables and final metrics.
 
 ### Optional Run Indexing
 
-When `maintain_index=True`, the system creates `runs/index.json`:
+When `maintain_index=True`, the system creates `<output-dir>/index.json`:
 
 ```json
 {
@@ -1197,38 +1236,41 @@ metrics = {"loss": float('nan'), "accuracy": 0.95}
 
 #### JSON Format
 
-See `examples/mnist_config.json`:
+See `experiments/example.json`:
 
 ```json
 {
-  "name": "mnist-classification",
-  "description": "Basic MNIST digit classification experiment",
+  "name": "example-comprehensive",
+  "description": "Comprehensive example demonstrating all configuration options",
   "dataset": {
-    "name": "mnist",
+    "name": "synthetic_regression",
     "params": {
-      "download": true,
-      "normalize": true
+      "n_samples": 1000,
+      "n_features": 20,
+      "n_informative": 15,
+      "noise_std": 0.2,
+      "seed": 42
     }
   },
   "model": {
-    "name": "resnet18",
-    "architecture": "resnet",
+    "name": "linear_regression",
     "params": {
-      "num_classes": 10,
-      "pretrained": false
+      "seed": 42,
+      "use_gradient_descent": true,
+      "l2_regularization": 0.01
     }
   },
   "training": {
-    "epochs": 10,
-    "batch_size": 64,
-    "learning_rate": 0.001,
-    "optimizer": "adam",
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "optimizer": "sgd",
     "seed": 42
   },
   "output": {
-    "directory": "outputs/mnist-experiment",
+    "directory": "runs",
     "save_checkpoints": true,
-    "checkpoint_frequency": 2,
+    "checkpoint_frequency": 10,
     "save_logs": true
   }
 }
@@ -1236,41 +1278,43 @@ See `examples/mnist_config.json`:
 
 #### YAML Format
 
-See `examples/cifar10_config.yaml`:
+See `experiments/example.yaml`:
 
 ```yaml
-name: cifar10-classification
-description: CIFAR-10 image classification with data augmentation
+name: example-comprehensive
+description: Comprehensive example demonstrating all configuration options
 
 dataset:
-  name: cifar10
+  name: synthetic_regression
   params:
-    download: true
-    augmentation: true
+    n_samples: 1000
+    n_features: 20
+    n_informative: 15
+    noise_std: 0.2
+    seed: 42
 
 model:
-  name: efficientnet_b0
-  architecture: efficientnet
+  name: linear_regression
   params:
-    num_classes: 10
-    dropout: 0.2
+    seed: 42
+    use_gradient_descent: true
+    l2_regularization: 0.01
 
 training:
   epochs: 50
-  batch_size: 128
-  learning_rate: 0.001
-  optimizer: adamw
+  batch_size: 32
+  learning_rate: 0.01
+  optimizer: sgd
   seed: 42
-  params:
-    weight_decay: 0.01
-    warmup_epochs: 5
 
 output:
-  directory: outputs/cifar10-experiment
+  directory: runs
   save_checkpoints: true
-  checkpoint_frequency: 5
+  checkpoint_frequency: 10
   save_logs: true
 ```
+
+**Note**: Examples in the `examples/` directory may reference unimplemented datasets (`mnist`, `cifar10`) and models (`resnet`, `efficientnet`) for illustration purposes only. Use the `experiments/` directory for working examples.
 
 ### Dry-Run Mode
 
@@ -1278,10 +1322,10 @@ Use dry-run mode to validate configuration without executing training:
 
 ```bash
 # Validate JSON config
-mlx run-experiment --dry-run --config examples/mnist_config.json
+mlx run-experiment --dry-run --config experiments/example.json
 
 # Validate YAML config
-mlx run-experiment --dry-run --config examples/cifar10_config.yaml
+mlx run-experiment --dry-run --config experiments/example.yaml
 ```
 
 Dry-run mode will:
@@ -1322,29 +1366,224 @@ The `mlx` package follows standard Python packaging conventions:
 Run a machine learning experiment:
 
 ```bash
-mlx run-experiment [experiment_name] [--config CONFIG] [--dry-run]
+mlx run-experiment [--config CONFIG] [--dry-run]
 ```
 
-- `experiment_name`: Name of the experiment to run (required unless --dry-run)
-- `--config`: Path to experiment configuration file
-- `--dry-run`: Perform a dry run without executing
+- `--config`: Path to experiment configuration file (required for actual runs, optional for dry-run)
+- `--dry-run`: Perform a dry run without executing (can be used without --config to see general workflow)
+
+**Note**: The experiment name is read from the configuration file, not from the command line.
 
 #### eval
 
 Evaluate experiment results:
 
 ```bash
-mlx eval [experiment_id] [--metrics METRIC [METRIC ...]] [--dry-run]
+mlx eval --run-dir RUN_DIR [--checkpoint CHECKPOINT] [--config CONFIG] [--dry-run]
 ```
 
-- `experiment_id`: ID of the experiment to evaluate (required unless --dry-run)
-- `--metrics`: Specific metrics to evaluate
+- `--run-dir`: Path to run directory containing checkpoint (required)
+- `--checkpoint`: Name of checkpoint to evaluate (default: checkpoint_final)
+- `--config`: Path to experiment configuration file (optional, for regenerating dataset)
 - `--dry-run`: Perform a dry run without executing
+
+**Note**: The `--metrics` flag for filtering specific metrics is not yet implemented.
 
 ## Edge Cases and Error Handling
 
+MLX provides comprehensive error handling and validation for common edge cases:
+
+### Output Directory Permissions
+
+**Issue**: Training fails if output directory lacks write permissions.
+
+**Detection**: MLX validates write permissions before creating run directories.
+
+**Error Example**:
+```
+Error: Permission denied: 'runs'
+```
+
+**Solutions**:
+```bash
+# Fix permissions
+chmod u+w runs/
+
+# Or change ownership
+sudo chown $USER:$USER runs/
+
+# Or specify a different directory in config
+# Note: Default output directory is 'outputs/' if not specified in config
+```
+
+**Best Practice**: Ensure output directory has write permissions before running experiments. Test with dry-run mode first.
+
+### Deterministic Seeds
+
+**Purpose**: Ensures reproducible results across runs and machines.
+
+**Requirement**: Set seeds in three places for full reproducibility:
+```json
+{
+  "dataset": {"params": {"seed": 42}},
+  "model": {"params": {"seed": 42}},
+  "training": {"seed": 42}
+}
+```
+
+**Guarantees**:
+- Same seed + same config = identical outputs
+- Works across different runs and timestamps
+- Reproducible on same architecture
+
+**Platform Notes**:
+- Minor numerical differences may occur across 32-bit vs 64-bit systems
+- Different BLAS libraries may introduce small variations
+- Tolerance settings account for these differences while maintaining determinism
+
+**Testing**: See `tests/test_datasets_synthetic.py::test_deterministic_generation` for examples.
+
+### Non-existent Datasets/Models
+
+**Issue**: Referencing unsupported datasets or models in configs.
+
+**Detection**: Validation occurs during config parsing and dry-run.
+
+**Error Examples**:
+```
+Dataset 'imagenet' is not yet supported.
+Currently supported: synthetic_regression, synthetic_classification
+```
+
+**Supported Datasets**:
+- `synthetic_regression` - Linear regression with Gaussian noise (fully implemented)
+- `synthetic_classification` - Cluster-based classification (fully implemented)
+
+**Supported Models**:
+- `linear_regression` - Linear regression with closed-form or gradient descent (fully implemented)
+- `mlp` - Multi-layer perceptron (fully implemented)
+
+**Note**: Example config files may reference datasets like `mnist` or `cifar10`, but these are not yet implemented and will fail if executed. Use `synthetic_regression` or `synthetic_classification` for working examples.
+
+**Best Practice**: Always use `--dry-run` to validate config before execution. Check current implementation status in `mlx/datasets/` and `mlx/models/`.
+
+### Local-Only Execution
+
+**Design Principle**: MLX operates entirely offline with no network dependencies.
+
+**Guarantees**:
+- ✅ No network I/O required for any operation
+- ✅ All data generated synthetically or loaded from local filesystem
+- ✅ No external APIs, cloud services, or remote datasets
+- ✅ Works in air-gapped environments
+- ✅ Fast execution (no network latency)
+
+**Implications**:
+- Dataset downloads not implemented (datasets must be synthetic or pre-downloaded)
+- No model pre-trained weight downloads
+- No metrics uploading to external services
+- Perfect for CI/CD, reproducibility, and privacy
+
+**Testing**: All tests run without network access. See `pytest.ini` configuration.
+
+### Memory Limits
+
+**Protection**: Synthetic datasets enforce a 1GB memory limit.
+
+**Rationale**: Prevents accidental resource exhaustion from misconfigured parameters.
+
+**Error Example**:
+```python
+dataset = SyntheticRegressionDataset(n_samples=10_000_000, n_features=1000)
+# Raises: ValueError("Dataset size exceeds 1GB limit")
+```
+
+**Calculation**: `size = n_samples * n_features * 8 bytes (float64)`
+
+**Workarounds**:
+1. Reduce dataset size
+2. Use batch processing
+3. Implement custom dataset with lazy loading
+
+**Testing**: See `tests/test_datasets_synthetic.py::test_memory_limit`.
+
+### Path Safety
+
+**Protection**: Output paths must resolve within repository root.
+
+**Rationale**: Prevents accidental writes outside workspace.
+
+**Error Example**:
+```json
+{
+  "output": {"directory": "../../etc"}  // Rejected
+}
+```
+
+**Valid Paths**:
+- `"runs"` - Relative to repo root
+- `"outputs/experiment-1"` - Nested relative path
+- `/home/user/workspace/runs` - Absolute within workspace (if workspace is /home/user/workspace)
+
+**Invalid Paths**:
+- `"../outside-workspace"` - Escapes workspace
+- `"/tmp/runs"` - Outside workspace (unless workspace is /tmp)
+
+**Testing**: See `tests/test_config.py` for path validation examples.
+
+### Conflicting Timestamps
+
+**Issue**: Multiple runs starting at exactly the same second.
+
+**Handling**: Automatic counter suffixing ensures uniqueness.
+
+**Behavior**:
+```
+runs/experiment/20251122_143025/      # First run
+runs/experiment/20251122_143025_1/    # Second run (same second)
+runs/experiment/20251122_143025_2/    # Third run (same second)
+```
+
+**Implementation**: See `mlx/training/output_manager.py::OutputManager._get_unique_run_dir()`.
+
+### Training Interruptions
+
+**Behavior**: Graceful handling of keyboard interrupts (Ctrl+C).
+
+**Preserved Outputs**:
+- Metrics written up to last completed epoch
+- Last completed checkpoint
+- Run directory and partial summary
+
+**Exit Codes**:
+- 130: Keyboard interrupt
+- 0: Success
+- 1: Error
+
+**Recovery**:
+```bash
+# Check what was saved (adjust path based on output.directory)
+ls -l outputs/my-experiment/*/checkpoints/
+
+# Evaluate last checkpoint
+mlx eval --run-dir outputs/my-experiment/20251122_143025 \
+         --checkpoint checkpoint_epoch_40
+```
+
+**Future Enhancement**: Resume from checkpoint (not yet implemented).
+
+### For More Edge Cases
+
+See **[docs/usage.md](docs/usage.md)** for additional troubleshooting scenarios including:
+- Configuration validation errors
+- Model convergence issues
+- Numerical stability (NaN/Inf handling)
+- Large dataset handling
+- Hyperparameter tuning strategies
+
+
 - **Python version check**: The package requires Python 3.8+. Install attempts with older versions will fail with a clear error.
-- **Missing arguments**: Required arguments (experiment_name, experiment_id) will cause the CLI to exit with status code 1 and an error message.
+- **Missing required flags**: Missing `--config` for `run-experiment` or `--run-dir` for `eval` will cause the CLI to exit with status code 1 and an error message.
 - **No command**: Invoking `mlx` without a subcommand will display help text and exit with status code 1.
 - **Multiple installations**: The console script name `mlx` is unique. If multiple versions are installed, the one in the active environment takes precedence.
 
