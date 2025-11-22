@@ -1236,38 +1236,41 @@ metrics = {"loss": float('nan'), "accuracy": 0.95}
 
 #### JSON Format
 
-See `examples/mnist_config.json`:
+See `experiments/example.json`:
 
 ```json
 {
-  "name": "mnist-classification",
-  "description": "Basic MNIST digit classification experiment",
+  "name": "example-comprehensive",
+  "description": "Comprehensive example demonstrating all configuration options",
   "dataset": {
-    "name": "mnist",
+    "name": "synthetic_regression",
     "params": {
-      "download": true,
-      "normalize": true
+      "n_samples": 1000,
+      "n_features": 20,
+      "n_informative": 15,
+      "noise_std": 0.2,
+      "seed": 42
     }
   },
   "model": {
-    "name": "resnet18",
-    "architecture": "resnet",
+    "name": "linear_regression",
     "params": {
-      "num_classes": 10,
-      "pretrained": false
+      "seed": 42,
+      "use_gradient_descent": true,
+      "l2_regularization": 0.01
     }
   },
   "training": {
-    "epochs": 10,
-    "batch_size": 64,
-    "learning_rate": 0.001,
-    "optimizer": "adam",
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "optimizer": "sgd",
     "seed": 42
   },
   "output": {
-    "directory": "outputs/mnist-experiment",
+    "directory": "runs",
     "save_checkpoints": true,
-    "checkpoint_frequency": 2,
+    "checkpoint_frequency": 10,
     "save_logs": true
   }
 }
@@ -1275,41 +1278,43 @@ See `examples/mnist_config.json`:
 
 #### YAML Format
 
-See `examples/cifar10_config.yaml`:
+See `experiments/example.yaml`:
 
 ```yaml
-name: cifar10-classification
-description: CIFAR-10 image classification with data augmentation
+name: example-comprehensive
+description: Comprehensive example demonstrating all configuration options
 
 dataset:
-  name: cifar10
+  name: synthetic_regression
   params:
-    download: true
-    augmentation: true
+    n_samples: 1000
+    n_features: 20
+    n_informative: 15
+    noise_std: 0.2
+    seed: 42
 
 model:
-  name: efficientnet_b0
-  architecture: efficientnet
+  name: linear_regression
   params:
-    num_classes: 10
-    dropout: 0.2
+    seed: 42
+    use_gradient_descent: true
+    l2_regularization: 0.01
 
 training:
   epochs: 50
-  batch_size: 128
-  learning_rate: 0.001
-  optimizer: adamw
+  batch_size: 32
+  learning_rate: 0.01
+  optimizer: sgd
   seed: 42
-  params:
-    weight_decay: 0.01
-    warmup_epochs: 5
 
 output:
-  directory: outputs/cifar10-experiment
+  directory: runs
   save_checkpoints: true
-  checkpoint_frequency: 5
+  checkpoint_frequency: 10
   save_logs: true
 ```
+
+**Note**: Examples in the `examples/` directory may reference unimplemented datasets (`mnist`, `cifar10`) and models (`resnet`, `efficientnet`) for illustration purposes only. Use the `experiments/` directory for working examples.
 
 ### Dry-Run Mode
 
@@ -1317,10 +1322,10 @@ Use dry-run mode to validate configuration without executing training:
 
 ```bash
 # Validate JSON config
-mlx run-experiment --dry-run --config examples/mnist_config.json
+mlx run-experiment --dry-run --config experiments/example.json
 
 # Validate YAML config
-mlx run-experiment --dry-run --config examples/cifar10_config.yaml
+mlx run-experiment --dry-run --config experiments/example.yaml
 ```
 
 Dry-run mode will:
