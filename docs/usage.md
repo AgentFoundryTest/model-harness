@@ -1204,6 +1204,7 @@ mlx run-experiment --config <path> [--dry-run]
 
 # Evaluate model
 mlx eval --run-dir <path> [--checkpoint <name>] [--config <path>] [--dry-run]
+# Note: --metrics flag exists but is not yet implemented
 
 # Python module invocation
 python -m mlx <command> [options]
