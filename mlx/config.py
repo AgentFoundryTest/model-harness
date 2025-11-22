@@ -608,8 +608,8 @@ class ConfigLoader:
             return ConfigLoader._parse_config(data)
     
     @staticmethod
-    def _load_json(path: Path) -> Dict[str, Any]:
-        """Load JSON configuration file."""
+    def _load_json(path: Path) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """Load JSON configuration file (supports both single object and array of objects)."""
         try:
             with open(path, 'r') as f:
                 return json.load(f)
@@ -620,8 +620,8 @@ class ConfigLoader:
             )
     
     @staticmethod
-    def _load_yaml(path: Path) -> Dict[str, Any]:
-        """Load YAML configuration file."""
+    def _load_yaml(path: Path) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """Load YAML configuration file (supports both single object and array of objects)."""
         if not YAML_AVAILABLE:
             raise ValueError(
                 "YAML support not available. Please install PyYAML:\n"
