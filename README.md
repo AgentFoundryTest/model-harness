@@ -77,7 +77,7 @@ pytest -m determinism
 
 ### Test Coverage
 
-The test suite includes 258+ tests covering:
+The comprehensive test suite covers:
 
 - **Configuration validation** (`tests/test_config_datasets.py`)
   - Valid and invalid config parsing
