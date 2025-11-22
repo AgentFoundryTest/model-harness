@@ -141,7 +141,7 @@ Initial release of MLX - ML Experiment Harness, a lightweight Python framework f
   - Configuration snapshot
 
 #### Testing Infrastructure
-- **Comprehensive test suite** with 258+ tests covering:
+- **Comprehensive test suite** covering:
   - **Configuration validation** (`test_config_datasets.py`)
     - Valid/invalid config parsing
     - Type checking and constraint validation
@@ -289,13 +289,21 @@ These features are mentioned in documentation/examples but not yet implemented:
 
 ### Installation
 
-```bash
-# Standard installation
-pip install mlx==0.1.0
+Currently available from source only:
 
-# Development installation
+```bash
+# Clone the repository
+git clone https://github.com/AgentFoundryTest/model-harness.git
+cd model-harness
+
+# Standard installation from source
+pip install .
+
+# Development installation (editable mode)
 pip install -e ".[dev]"
 ```
+
+Future releases will be available on PyPI.
 
 ### Quick Start
 
