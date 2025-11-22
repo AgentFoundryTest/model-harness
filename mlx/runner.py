@@ -30,9 +30,13 @@ class RunnerError(Exception):
 def _setup_signal_handlers():
     """
     Setup signal handlers for graceful shutdown on keyboard interrupt.
+    
+    Note: Training progress is automatically saved per-epoch via metrics writer,
+    so immediate termination is safe. Partial outputs remain consistent.
     """
     def signal_handler(signum, frame):
         print("\n\nKeyboard interrupt received. Cleaning up...", file=sys.stderr)
+        # Note: No explicit cleanup needed - metrics/checkpoints already saved per-epoch
         sys.exit(130)  # Standard exit code for SIGINT
     
     signal.signal(signal.SIGINT, signal_handler)
