@@ -332,8 +332,8 @@ mlx run-experiment --config examples/linear_regression_config.json
 # Dry run (validates config without execution)
 mlx run-experiment --dry-run --config examples/linear_regression_config.json
 
-# Evaluate a trained model (adjust path based on output.directory in config)
-mlx eval --config examples/linear_regression_config.json --run-dir outputs/my-experiment/20241122_143025
+# Evaluate a trained model (path depends on output.directory in config - this uses "runs")
+mlx eval --config examples/linear_regression_config.json --run-dir runs/my-experiment/20241122_143025
 ```
 
 ### End-to-End Training Workflow
