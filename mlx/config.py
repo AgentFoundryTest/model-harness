@@ -298,6 +298,57 @@ class ModelConfig:
             )
         
         return errors
+    
+    def create_model(self):
+        """
+        Create a model instance based on the configuration.
+        
+        Returns:
+            Model instance (BaseModel subclass)
+            
+        Raises:
+            ValueError: If model type is unknown or parameters are invalid
+        """
+        from mlx.models import LinearRegression, MLP
+        
+        model_name = self.name.lower()
+        
+        if model_name == "linear_regression":
+            # Extract parameters with defaults
+            seed = self.params.get("seed", None)
+            use_gradient_descent = self.params.get("use_gradient_descent", False)
+            l2_regularization = self.params.get("l2_regularization", 0.0)
+            
+            return LinearRegression(
+                seed=seed,
+                use_gradient_descent=use_gradient_descent,
+                l2_regularization=l2_regularization
+            )
+        
+        elif model_name == "mlp":
+            # Extract parameters
+            layer_sizes = self.params.get("layer_sizes")
+            if not layer_sizes:
+                raise ValueError(
+                    "MLP model requires 'layer_sizes' parameter in config"
+                )
+            
+            seed = self.params.get("seed", None)
+            activation = self.params.get("activation", "relu")
+            output_activation = self.params.get("output_activation", None)
+            
+            return MLP(
+                layer_sizes=layer_sizes,
+                seed=seed,
+                activation=activation,
+                output_activation=output_activation
+            )
+        
+        else:
+            raise ValueError(
+                f"Cannot instantiate model '{self.name}'. "
+                f"Supported models: linear_regression, mlp"
+            )
 
 
 @dataclass
