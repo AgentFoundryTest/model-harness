@@ -305,7 +305,16 @@ def run_evaluation(
         # Load config
         if config_path:
             print(f"[1/4] Loading configuration from: {config_path}...")
-            config = ConfigLoader.load_from_file(config_path)
+            config_or_configs = ConfigLoader.load_from_file(config_path)
+            
+            # Evaluation only supports single configs, not multi-experiment arrays
+            if isinstance(config_or_configs, list):
+                raise RunnerError(
+                    f"Multi-experiment config files are not supported for evaluation. "
+                    f"The config file contains {len(config_or_configs)} experiments. "
+                    f"Please provide a single experiment config or load config from run directory using --run-dir only."
+                )
+            config = config_or_configs
         elif run_dir:
             print(f"[1/4] Loading configuration from run directory...")
             config_dict = OutputManager.load_run_config(Path(run_dir))

@@ -107,6 +107,36 @@ class TestRunnerEvaluation:
         
         with pytest.raises(Exception):  # Will raise FileNotFoundError or similar
             run_evaluation(run_dir=missing_dir, dry_run=False)
+    
+    def test_eval_rejects_multi_experiment_config(self, tmp_path):
+        """Test that evaluation rejects multi-experiment config files."""
+        # Create a multi-experiment config file
+        config_file = tmp_path / "multi_config.json"
+        config_data = [
+            {
+                "name": "exp-1",
+                "dataset": {"name": "synthetic_regression"},
+                "model": {"name": "linear_regression"},
+                "training": {"epochs": 1},
+                "output": {"directory": "test_runs"}
+            },
+            {
+                "name": "exp-2",
+                "dataset": {"name": "synthetic_regression"},
+                "model": {"name": "linear_regression"},
+                "training": {"epochs": 1},
+                "output": {"directory": "test_runs"}
+            }
+        ]
+        config_file.write_text(json.dumps(config_data))
+        
+        # Create a dummy run directory
+        run_dir = tmp_path / "run"
+        run_dir.mkdir()
+        
+        # Should raise error about multi-experiment config
+        with pytest.raises(RunnerError, match="Multi-experiment config files are not supported"):
+            run_evaluation(config_path=config_file, run_dir=run_dir, dry_run=False)
 
 
 class TestMultiExperiment:
