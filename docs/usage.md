@@ -124,7 +124,7 @@ Experiment: my-first-experiment
    - Seed: 42
 
 4. Output:
-   - Directory: /path/to/runs
+   - Directory: /path/to/outputs
    - Save checkpoints: True
    - Checkpoint frequency: 1 epoch(s)
    - Save logs: True
@@ -139,6 +139,13 @@ Status: Would execute experiment (dry run)
 - ✅ Output directory path is valid
 - ✅ Dataset parameters make sense
 - ✅ No validation errors
+
+**Note**: If no `output.directory` is specified in the config, the default is `outputs/`. To use `runs/` instead, add:
+```json
+"output": {
+  "directory": "runs"
+}
+```
 
 ### Phase 3: Execution (Training)
 
@@ -159,7 +166,7 @@ RUNNING EXPERIMENT: my-first-experiment
 [2/5] Initializing model: linear_regression...
       ✓ Model initialized
 [3/5] Setting up output directory...
-      ✓ Output directory: /path/to/runs/my-first-experiment/20251122_143025
+      ✓ Output directory: /path/to/outputs/my-first-experiment/20251122_143025
 [4/5] Initializing metrics writer...
       ✓ Metrics writer ready
 [5/5] Starting training (10 epochs)...
@@ -173,9 +180,9 @@ Final metrics:
   epoch: 10.000000
   loss: 0.124536
 
-Outputs saved to: /path/to/runs/my-first-experiment/20251122_143025
-Checkpoints: /path/to/runs/my-first-experiment/20251122_143025/checkpoints
-Metrics: /path/to/runs/my-first-experiment/20251122_143025/metrics
+Outputs saved to: /path/to/outputs/my-first-experiment/20251122_143025
+Checkpoints: /path/to/outputs/my-first-experiment/20251122_143025/checkpoints
+Metrics: /path/to/outputs/my-first-experiment/20251122_143025/metrics
 ```
 
 **Important Notes:**
@@ -184,14 +191,15 @@ Metrics: /path/to/runs/my-first-experiment/20251122_143025/metrics
 - Each run gets a unique timestamp-based directory
 - Exit code 130 indicates keyboard interrupt
 - Exit code 0 indicates success
+- **Default output directory is `outputs/`** (use `"directory": "runs"` in config to change)
 
 ### Phase 4: Inspection (Reviewing Outputs)
 
 After training, explore the generated artifacts:
 
 ```bash
-# Navigate to run directory
-cd runs/my-first-experiment/20251122_143025
+# Navigate to run directory (adjust path based on your output.directory setting)
+cd outputs/my-first-experiment/20251122_143025
 
 # View directory structure
 tree .
@@ -290,9 +298,9 @@ Sample output:
     "epoch": 10,
     "loss": 0.124536
   },
-  "run_dir": "/path/to/runs/my-first-experiment/20251122_143025",
-  "checkpoint_dir": "/path/to/runs/my-first-experiment/20251122_143025/checkpoints",
-  "metrics_dir": "/path/to/runs/my-first-experiment/20251122_143025/metrics"
+  "run_dir": "/path/to/outputs/my-first-experiment/20251122_143025",
+  "checkpoint_dir": "/path/to/outputs/my-first-experiment/20251122_143025/checkpoints",
+  "metrics_dir": "/path/to/outputs/my-first-experiment/20251122_143025/metrics"
 }
 ```
 
@@ -302,13 +310,13 @@ Evaluate a trained model without retraining:
 
 ```bash
 # Option 1: Use run directory only (config loaded automatically)
-mlx eval --run-dir runs/my-first-experiment/20251122_143025
+mlx eval --run-dir outputs/my-first-experiment/20251122_143025
 
 # Option 2: Specify checkpoint
-mlx eval --run-dir runs/my-first-experiment/20251122_143025 --checkpoint checkpoint_epoch_10
+mlx eval --run-dir outputs/my-first-experiment/20251122_143025 --checkpoint checkpoint_epoch_10
 
 # Option 3: Dry-run evaluation
-mlx eval --dry-run --run-dir runs/my-first-experiment/20251122_143025
+mlx eval --dry-run --run-dir outputs/my-first-experiment/20251122_143025
 ```
 
 **Sample Evaluation Output:**
@@ -319,7 +327,7 @@ RUNNING EVALUATION
 
 [1/4] Loading configuration from run directory...
       ✓ Configuration loaded
-[2/4] Loading evaluator from: runs/my-first-experiment/20251122_143025...
+[2/4] Loading evaluator from: outputs/my-first-experiment/20251122_143025...
       ✓ Evaluator loaded
 [3/4] Regenerating dataset: synthetic_regression...
       ✓ Dataset regenerated
