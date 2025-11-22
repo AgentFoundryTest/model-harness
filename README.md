@@ -1372,24 +1372,28 @@ The `mlx` package follows standard Python packaging conventions:
 Run a machine learning experiment:
 
 ```bash
-mlx run-experiment [experiment_name] [--config CONFIG] [--dry-run]
+mlx run-experiment --config CONFIG [--dry-run]
 ```
 
-- `experiment_name`: Name of the experiment to run (required unless --dry-run)
-- `--config`: Path to experiment configuration file
+- `--config`: Path to experiment configuration file (required)
 - `--dry-run`: Perform a dry run without executing
+
+**Note**: The experiment name is read from the configuration file, not from the command line.
 
 #### eval
 
 Evaluate experiment results:
 
 ```bash
-mlx eval [experiment_id] [--metrics METRIC [METRIC ...]] [--dry-run]
+mlx eval --run-dir RUN_DIR [--checkpoint CHECKPOINT] [--config CONFIG] [--dry-run]
 ```
 
-- `experiment_id`: ID of the experiment to evaluate (required unless --dry-run)
-- `--metrics`: Specific metrics to evaluate
+- `--run-dir`: Path to run directory containing checkpoint (required)
+- `--checkpoint`: Name of checkpoint to evaluate (default: checkpoint_final)
+- `--config`: Path to experiment configuration file (optional, for regenerating dataset)
 - `--dry-run`: Perform a dry run without executing
+
+**Note**: The `--metrics` flag for filtering specific metrics is not yet implemented.
 
 ## Edge Cases and Error Handling
 
