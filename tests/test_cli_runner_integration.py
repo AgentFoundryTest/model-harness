@@ -125,6 +125,24 @@ class TestRunnerEvaluation:
         with pytest.raises(Exception):  # Will raise FileNotFoundError or similar
             run_evaluation(run_dir=missing_dir, dry_run=False)
     
+    def test_eval_dry_run_validates_run_dir_exists(self, tmp_path):
+        """Test that dry-run evaluation validates run directory exists."""
+        missing_dir = tmp_path / "nonexistent"
+        
+        # Dry-run should fail for non-existent run directory
+        with pytest.raises(RunnerError, match="Run directory does not exist"):
+            run_evaluation(run_dir=missing_dir, dry_run=True)
+    
+    def test_eval_dry_run_rejects_file_as_run_dir(self, tmp_path):
+        """Test that dry-run evaluation rejects a file path as run directory."""
+        # Create a file instead of directory
+        file_path = tmp_path / "not_a_dir.txt"
+        file_path.write_text("test")
+        
+        # Dry-run should fail for file path
+        with pytest.raises(RunnerError, match="not a directory"):
+            run_evaluation(run_dir=file_path, dry_run=True)
+    
     def test_eval_rejects_multi_experiment_config(self, tmp_path):
         """Test that evaluation rejects multi-experiment config files."""
         # Create a multi-experiment config file

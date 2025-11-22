@@ -319,6 +319,19 @@ def run_evaluation(
                 "This should be the path to a completed training run."
             )
         
+        # Validate that run_dir exists (same validation as execution path)
+        run_dir_path = Path(run_dir)
+        if not run_dir_path.exists():
+            raise RunnerError(
+                f"Run directory does not exist: {run_dir}\n"
+                f"Please provide a valid path to a completed training run."
+            )
+        if not run_dir_path.is_dir():
+            raise RunnerError(
+                f"Run directory path is not a directory: {run_dir}\n"
+                f"Please provide a valid directory path."
+            )
+        
         if config_path:
             print(f"Config: {config_path}")
             
