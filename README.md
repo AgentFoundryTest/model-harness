@@ -1459,8 +1459,6 @@ Currently supported: synthetic_regression, synthetic_classification
 - `mlp` - Multi-layer perceptron (fully implemented)
 
 **Note**: Example config files may reference datasets like `mnist` or `cifar10`, but these are not yet implemented and will fail if executed. Use `synthetic_regression` or `synthetic_classification` for working examples.
-- `mlp` - Multi-layer perceptron (fully implemented)
-- Other models listed but not yet implemented
 
 **Best Practice**: Always use `--dry-run` to validate config before execution. Check current implementation status in `mlx/datasets/` and `mlx/models/`.
 
