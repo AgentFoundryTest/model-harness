@@ -28,7 +28,8 @@ class OutputManager:
         experiment_name: str,
         base_dir: str = "runs",
         maintain_index: bool = True,
-        timestamp: Optional[str] = None
+        timestamp: Optional[str] = None,
+        validate_safety: bool = True
     ):
         """
         Initialize output manager.
@@ -38,12 +39,13 @@ class OutputManager:
             base_dir: Base directory for runs (default: "runs")
             maintain_index: Whether to maintain runs/index.json
             timestamp: Optional timestamp string (auto-generated if None)
+            validate_safety: Whether to validate path safety (default: True)
             
         Raises:
             ValueError: If paths are invalid or unsafe
         """
-        # Validate base_dir safety
-        if not validate_path_safety(base_dir):
+        # Validate base_dir safety if requested
+        if validate_safety and not validate_path_safety(base_dir):
             raise ValueError(
                 f"Base directory '{base_dir}' resolves outside the repository root"
             )
@@ -54,7 +56,7 @@ class OutputManager:
         
         # Generate or use provided timestamp
         if timestamp is None:
-            self.timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         else:
             self.timestamp = timestamp
         
@@ -122,7 +124,7 @@ class OutputManager:
             "experiment": self.experiment_name,
             "timestamp": self.timestamp,
             "run_dir": str(self.run_dir.relative_to(self.base_dir)),
-            "created_at": datetime.utcnow().isoformat()
+            "created_at": datetime.now().isoformat()
         }
         
         index["runs"].append(run_entry)
