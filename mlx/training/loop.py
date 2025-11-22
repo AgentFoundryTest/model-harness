@@ -140,7 +140,8 @@ class TrainingLoop:
         epoch_accuracies = []
         
         # Get batches (shuffle with epoch-specific seed for determinism)
-        batch_seed = self.seed + epoch if self.seed is not None else None
+        # Use modulo to prevent overflow with large epoch numbers
+        batch_seed = (self.seed + epoch) % (2**31) if self.seed is not None else None
         batches = self.dataset.get_batches(
             X, y,
             batch_size=self.batch_size,

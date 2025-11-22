@@ -57,10 +57,12 @@ class NumpyJSONEncoder(json.JSONEncoder):
             return self._sanitize_array(obj)
         elif isinstance(obj, (np.complexfloating, complex)):
             # Convert complex to dict with real and imaginary parts
+            # If either part is NaN/Inf, the entire value is sanitized to null
             value = complex(obj)
-            real = None if math.isnan(value.real) or math.isinf(value.real) else value.real
-            imag = None if math.isnan(value.imag) or math.isinf(value.imag) else value.imag
-            return {"real": real, "imag": imag}
+            if (math.isnan(value.real) or math.isinf(value.real) or 
+                math.isnan(value.imag) or math.isinf(value.imag)):
+                return None
+            return {"real": value.real, "imag": value.imag}
         
         # Handle Python float NaN/Inf
         if isinstance(obj, float):
