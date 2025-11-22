@@ -582,30 +582,18 @@ mlx run-experiment --config my-config.json
 
 Run multiple experiments sequentially:
 
-```json
-[
-  {
-    "name": "experiment-1",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 100}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  },
-  {
-    "name": "experiment-2",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 200}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  }
-]
-```
-
 ```bash
-# Dry-run all experiments
-mlx run-experiment --dry-run --config multi-config.json
+# Use the provided multi-experiment config
+mlx run-experiment --dry-run --config experiments/multi_example.json
 
 # Run all experiments
-mlx run-experiment --config multi-config.json
+mlx run-experiment --config experiments/multi_example.json
 ```
+
+The `experiments/multi_example.json` file contains three experiments:
+1. Small regression example (100 samples, 5 features)
+2. Binary classification (200 samples, 10 features)
+3. Larger regression (1000 samples, 20 features)
 
 **Behavior:**
 - Experiments execute in order

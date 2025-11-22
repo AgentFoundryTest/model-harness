@@ -495,29 +495,11 @@ print(summary)
 Run multiple experiments sequentially by providing a JSON array of configurations:
 
 ```bash
-# Create multi-experiment config
-cat > multi_config.json << 'EOF'
-[
-  {
-    "name": "experiment-1",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 100}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  },
-  {
-    "name": "experiment-2",
-    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 200}},
-    "model": {"name": "linear_regression"},
-    "training": {"epochs": 10}
-  }
-]
-EOF
-
-# Dry run multi-experiment
-mlx run-experiment --dry-run --config multi_config.json
+# Use the provided multi-experiment config
+mlx run-experiment --dry-run --config experiments/multi_example.json
 
 # Run all experiments sequentially
-mlx run-experiment --config multi_config.json
+mlx run-experiment --config experiments/multi_example.json
 ```
 
 **Behavior:**
@@ -1588,9 +1570,8 @@ See **[docs/usage.md](docs/usage.md)** for additional troubleshooting scenarios 
 - Hyperparameter tuning strategies
 
 
-
 - **Python version check**: The package requires Python 3.8+. Install attempts with older versions will fail with a clear error.
-- **Missing arguments**: Required arguments (experiment_name, experiment_id) will cause the CLI to exit with status code 1 and an error message.
+- **Missing required flags**: Missing `--config` for `run-experiment` or `--run-dir` for `eval` will cause the CLI to exit with status code 1 and an error message.
 - **No command**: Invoking `mlx` without a subcommand will display help text and exit with status code 1.
 - **Multiple installations**: The console script name `mlx` is unique. If multiple versions are installed, the one in the active environment takes precedence.
 
