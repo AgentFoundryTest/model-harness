@@ -48,3 +48,7 @@ htmlcov/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Training runs
+runs/
+outputs/
