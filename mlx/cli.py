@@ -71,10 +71,10 @@ def create_parser() -> argparse.ArgumentParser:
         "eval",
         help="Evaluate experiment results",
         epilog="Examples:\n"
-               "  mlx eval --dry-run --run-dir outputs/my-experiment/20251122_143025\n"
-               "  mlx eval --run-dir outputs/my-experiment/20251122_143025\n"
-               "  mlx eval --run-dir outputs/my-experiment/20251122_143025 --checkpoint checkpoint_epoch_20\n"
-               "\nNote: Default output directory is 'outputs/' (configurable via output.directory)\n"
+               "  mlx eval --dry-run --run-dir runs/my-experiment/20251122_143025\n"
+               "  mlx eval --run-dir runs/my-experiment/20251122_143025\n"
+               "  mlx eval --run-dir runs/my-experiment/20251122_143025 --checkpoint checkpoint_epoch_20\n"
+               "\nNote: Bundled example configs use 'runs/' directory. Default is 'outputs/' (configurable).\n"
                "For more details, see: docs/usage.md",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

@@ -1366,7 +1366,7 @@ The `mlx` package follows standard Python packaging conventions:
 Run a machine learning experiment:
 
 ```bash
-mlx run-experiment --config CONFIG [--dry-run]
+mlx run-experiment [--config CONFIG] [--dry-run]
 ```
 
 - `--config`: Path to experiment configuration file (required for actual runs, optional for dry-run)
