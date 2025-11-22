@@ -35,16 +35,16 @@ mlx --help
 
 ```bash
 # 1. Validate a sample configuration
-mlx run-experiment --dry-run --config examples/linear_regression_config.json
+mlx run-experiment --dry-run --config experiments/example.json
 
 # 2. Run the experiment
-mlx run-experiment --config examples/linear_regression_config.json
+mlx run-experiment --config experiments/example.json
 
 # 3. Evaluate the trained model
-mlx eval --run-dir runs/linear-regression-example/20251122_033110
+mlx eval --run-dir runs/example-comprehensive/<timestamp>
 ```
 
-Expected output location: `runs/linear-regression-example/<timestamp>/`
+Expected output location: `runs/example-comprehensive/<timestamp>/`
 
 ## Experiment Lifecycle
 
