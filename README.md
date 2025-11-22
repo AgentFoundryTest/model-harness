@@ -369,6 +369,247 @@ Loading checkpoint with wrong architecture:
 - **Descriptive error**: Clear message about mismatch
 - **Example**: Cannot load [10, 5, 1] MLP into [10, 3, 1] model
 
+## Training Pipeline
+
+MLX provides a complete training pipeline that orchestrates datasets, models, metrics computation, and artifact management with deterministic behavior.
+
+### Core Components
+
+#### Training Loop
+
+The `TrainingLoop` class coordinates epoch-based training with:
+- Automatic batching and shuffling
+- Per-epoch metrics computation
+- Checkpoint saving at configurable intervals
+- Deterministic behavior via seed control
+
+#### Output Manager
+
+The `OutputManager` creates organized run directories:
+- Pattern: `runs/<experiment>/<timestamp>/`
+- Subdirectories: `checkpoints/`, `metrics/`
+- Optional `runs/index.json` for tracking all runs
+- Unique timestamp-based naming prevents conflicts
+
+#### Metrics Writer
+
+The `MetricsWriter` handles metrics serialization:
+- **JSON**: Complete history in `metrics.json`
+- **NDJSON**: Streaming format in `metrics.ndjson`
+- **Markdown**: Human-readable summary in `metrics.md`
+- **Sanitization**: NaN/Inf values converted to null
+
+### Training Flow
+
+```python
+from mlx.datasets import SyntheticRegressionDataset
+from mlx.models import LinearRegression
+from mlx.training import TrainingLoop, OutputManager
+from mlx.metrics import MetricsWriter
+
+# 1. Create dataset
+dataset = SyntheticRegressionDataset(
+    n_samples=1000,
+    n_features=20,
+    seed=42
+)
+
+# 2. Create model
+model = LinearRegression(seed=42, use_gradient_descent=True)
+
+# 3. Set up output management
+output_manager = OutputManager(
+    experiment_name="my_experiment",
+    base_dir="runs",
+    maintain_index=True
+)
+
+# 4. Initialize metrics writer
+metrics_writer = MetricsWriter(
+    output_dir=output_manager.get_metrics_dir(),
+    experiment_name="my_experiment"
+)
+
+# 5. Configure and run training
+training_loop = TrainingLoop(
+    model=model,
+    dataset=dataset,
+    metrics_writer=metrics_writer,
+    epochs=50,
+    batch_size=32,
+    seed=42,
+    checkpoint_dir=output_manager.get_checkpoint_dir(),
+    checkpoint_frequency=10
+)
+
+# 6. Train
+summary = training_loop.train()
+print(f"Training completed: {summary['status']}")
+print(f"Final loss: {summary['final_metrics']['loss']}")
+```
+
+### Run Directory Structure
+
+After training, the run directory contains:
+
+```
+runs/
+└── my_experiment/
+    └── 20241122_143025/
+        ├── config.json              # Experiment configuration
+        ├── checkpoints/
+        │   ├── checkpoint_epoch_10/ # Periodic checkpoints
+        │   ├── checkpoint_epoch_20/
+        │   └── checkpoint_final/    # Final trained model
+        └── metrics/
+            ├── metrics.json         # Complete metrics history
+            ├── metrics.ndjson       # Streaming metrics (one per line)
+            └── metrics.md           # Markdown summary
+```
+
+### Metrics Artifacts
+
+#### metrics.json
+
+Complete training history:
+
+```json
+{
+  "experiment": "my_experiment",
+  "metrics": [
+    {"epoch": 1, "loss": 0.523, "accuracy": 0.85},
+    {"epoch": 2, "loss": 0.412, "accuracy": 0.88},
+    ...
+  ]
+}
+```
+
+#### metrics.ndjson
+
+Newline-delimited JSON for streaming:
+
+```
+{"epoch": 1, "loss": 0.523, "accuracy": 0.85}
+{"epoch": 2, "loss": 0.412, "accuracy": 0.88}
+```
+
+#### metrics.md
+
+Human-readable Markdown summary with tables and final metrics.
+
+### Optional Run Indexing
+
+When `maintain_index=True`, the system creates `runs/index.json`:
+
+```json
+{
+  "runs": [
+    {
+      "experiment": "my_experiment",
+      "timestamp": "20241122_143025",
+      "run_dir": "my_experiment/20241122_143025",
+      "created_at": "2024-11-22T14:30:25.123456"
+    },
+    ...
+  ]
+}
+```
+
+This enables:
+- Tracking all experimental runs
+- Finding runs by experiment name
+- Comparing runs across timestamps
+
+### Evaluation
+
+Evaluate trained models without retraining:
+
+```python
+from mlx.evaluation import Evaluator
+
+# Load evaluator for a specific run
+evaluator = Evaluator(run_dir="runs/my_experiment/20241122_143025")
+
+# Load model from checkpoint
+model = evaluator.load_model(checkpoint_name="checkpoint_final")
+
+# Evaluate on dataset
+metrics = evaluator.evaluate(dataset, seed=42)
+print(f"Test MSE: {metrics['mse']}")
+print(f"Test R²: {metrics['r2']}")
+```
+
+### Deterministic Training
+
+All training runs are deterministic when using seeds:
+
+1. **Dataset generation**: Same seed produces identical data
+2. **Model initialization**: Weights initialized consistently
+3. **Batch shuffling**: Deterministic shuffle per epoch
+4. **Training step**: Reproducible gradient updates
+
+Example - identical results across runs:
+
+```python
+# Run 1
+dataset1 = SyntheticRegressionDataset(n_samples=100, seed=42)
+model1 = LinearRegression(seed=42)
+# ... train ...
+
+# Run 2 (later, different machine)
+dataset2 = SyntheticRegressionDataset(n_samples=100, seed=42)
+model2 = LinearRegression(seed=42)
+# ... train with same config ...
+
+# Results are identical
+```
+
+### NumPy Type Handling
+
+The metrics system automatically handles NumPy types:
+
+- **NumPy scalars**: `np.float64(0.5)` → `0.5` (Python float)
+- **NumPy arrays**: `np.array([1, 2])` → `[1, 2]` (Python list)
+- **NaN/Inf**: `float('nan')` → `null` (JSON null)
+
+This ensures all metrics are valid JSON without manual conversion.
+
+### Edge Cases
+
+#### Conflicting Timestamps
+
+If two runs start at the exact same timestamp:
+- First run: `runs/exp/20241122_143025/`
+- Second run: `runs/exp/20241122_143025_1/`
+- Third run: `runs/exp/20241122_143025_2/`
+
+The system appends counters to ensure uniqueness.
+
+#### Long-Running Interruptions
+
+Training can be interrupted mid-run. Partial outputs remain consistent:
+- Metrics written per epoch (NDJSON streaming)
+- Last completed checkpoint saved
+- Can resume by loading latest checkpoint
+
+#### Missing Checkpoints
+
+Attempting to evaluate without a checkpoint:
+
+```python
+evaluator = Evaluator("runs/exp/20241122_143025")
+evaluator.load_model()  # Raises EvaluationError with clear message
+```
+
+#### NaN/Inf in Metrics
+
+Metrics containing NaN or Inf are sanitized before serialization:
+
+```python
+metrics = {"loss": float('nan'), "accuracy": 0.95}
+# Saved as: {"loss": null, "accuracy": 0.95}
+```
+
 ### Training Configuration
 
 | Field | Type | Default | Description |
