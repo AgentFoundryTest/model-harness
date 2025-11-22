@@ -173,22 +173,15 @@ class MLP(BaseModel):
             Derivative values
             
         Note:
-            For softmax, this returns a simplified element-wise derivative.
-            The full Jacobian would be more complex, but for the gradient
-            computation in backprop with MSE loss, the simplified form
-            A * (1 - A) provides the correct gradient direction.
+            Softmax derivative is NOT handled by this method - it requires
+            computing the full Jacobian-vector product which is done directly
+            in train_step() for the output layer.
         """
         if activation == "relu":
             return (A > 0).astype(float)
         elif activation == "tanh":
             return 1.0 - A ** 2
         elif activation == "sigmoid":
-            return A * (1.0 - A)
-        elif activation == "softmax":
-            # Simplified element-wise derivative for use with MSE loss
-            # Full Jacobian: J_ij = softmax_i * (delta_ij - softmax_j)
-            # For MSE loss backprop, using element-wise: softmax * (1 - softmax)
-            # provides correct gradient flow
             return A * (1.0 - A)
         else:
             return np.ones_like(A)
@@ -306,7 +299,23 @@ class MLP(BaseModel):
         delta = predictions - y_reshaped  # Gradient of MSE loss w.r.t. predictions
         
         # Apply output activation derivative if present (chain rule)
-        if self.output_activation is not None:
+        if self.output_activation == "softmax":
+            # For softmax, compute proper Jacobian-vector product
+            # dL/dz_j = Σ_i (dL/da_i * da_i/dz_j)
+            # where da_i/dz_j = a_i * (δ_ij - a_j)
+            # This simplifies to: dL/dz = a ⊙ (dL/da - Σ_k(dL/da_k * a_k))
+            # For each sample in the batch
+            delta_new = np.zeros_like(delta)
+            for sample_idx in range(delta.shape[0]):
+                pred_sample = predictions[sample_idx]  # (n_classes,)
+                delta_sample = delta[sample_idx]  # (n_classes,)
+                # Compute Jacobian-vector product for this sample
+                # J @ v = pred ⊙ (v - (pred • v))
+                dot_product = np.dot(pred_sample, delta_sample)
+                delta_new[sample_idx] = pred_sample * (delta_sample - dot_product)
+            delta = delta_new
+        elif self.output_activation is not None:
+            # For sigmoid and other activations, use element-wise derivative
             delta = delta * self._activation_derivative(predictions, self.output_activation)
         
         for i in reversed(range(len(self.weights))):
