@@ -50,9 +50,8 @@ class OutputManager:
                 f"Base directory '{base_dir}' resolves outside the repository root"
             )
         
-        # Sanitize experiment name to prevent path traversal
-        sanitized_name = experiment_name.replace('/', '_').replace('\\', '_').replace('..', '_')
-        if sanitized_name != experiment_name:
+        # Validate experiment name to prevent path traversal
+        if '/' in experiment_name or '\\' in experiment_name or '..' in experiment_name:
             raise ValueError(
                 f"Experiment name '{experiment_name}' contains invalid path characters. "
                 f"Use alphanumeric characters, hyphens, and underscores only."
@@ -67,6 +66,9 @@ class OutputManager:
             self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         else:
             self.timestamp = timestamp
+        
+        # Store original timestamp for conflict resolution
+        self._original_timestamp = self.timestamp
         
         # Create run directory: runs/<experiment>/<timestamp>/
         self.run_dir = self.base_dir / experiment_name / self.timestamp
@@ -97,10 +99,9 @@ class OutputManager:
         
         while attempt < max_attempts:
             if attempt > 0:
-                # Add counter suffix for uniqueness
-                self.run_dir = base_run_dir.parent / f"{base_run_dir.name}_{attempt}"
-                # Update timestamp to match the actual directory name
-                self.timestamp = f"{self.timestamp}_{attempt}"
+                # Add counter suffix for uniqueness (using original timestamp)
+                self.timestamp = f"{self._original_timestamp}_{attempt}"
+                self.run_dir = base_run_dir.parent / self.timestamp
                 self.checkpoint_dir = self.run_dir / "checkpoints"
                 self.metrics_dir = self.run_dir / "metrics"
                 self.config_path = self.run_dir / "config.json"
