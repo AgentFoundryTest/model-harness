@@ -63,7 +63,7 @@ def create_parser() -> argparse.ArgumentParser:
         "experiment_name",
         type=str,
         nargs="?",
-        help="Name of the experiment to run (required unless --dry-run)",
+        help="(Deprecated: experiment name is read from config file)",
     )
     
     # eval subcommand
