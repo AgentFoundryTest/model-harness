@@ -30,6 +30,45 @@ This installs the package in editable mode along with pytest and other developme
 
 - pytest >= 7.0 (for running tests)
 
+## Experiment Lifecycle Overview
+
+MLX follows a structured workflow for running machine learning experiments:
+
+1. **Configuration** - Define experiment parameters in JSON or YAML
+2. **Validation** - Use `--dry-run` to validate config before execution
+3. **Execution** - Run experiment and train model
+4. **Inspection** - Review outputs (metrics, checkpoints, logs)
+5. **Evaluation** - Re-evaluate trained models on datasets
+6. **History** - Track all runs via `runs/index.json`
+
+**Key Concepts:**
+- **Deterministic execution**: Set seeds in dataset, model, and training for reproducibility
+- **Timestamped outputs**: Each run gets a unique directory `runs/<experiment>/<timestamp>/`
+- **Multiple formats**: Metrics saved as JSON, NDJSON (streaming), and Markdown
+- **Checkpoint management**: Save model state at configurable intervals
+- **Local-only**: No network I/O, all operations on local filesystem
+
+**Quick Example:**
+```bash
+# 1. Validate configuration
+mlx run-experiment --dry-run --config experiments/example.json
+
+# 2. Run experiment
+mlx run-experiment --config experiments/example.json
+# Output: runs/example-comprehensive/20251122_143025/
+
+# 3. Inspect metrics
+cat runs/example-comprehensive/20251122_143025/metrics/metrics.md
+
+# 4. Evaluate model
+mlx eval --run-dir runs/example-comprehensive/20251122_143025
+
+# 5. View run history
+cat runs/index.json | python -m json.tool
+```
+
+For detailed workflow documentation, see **[docs/usage.md](docs/usage.md)**.
+
 ## Testing
 
 MLX includes a comprehensive automated test suite to ensure reliability and deterministic behavior.
@@ -274,7 +313,9 @@ pytest --durations=10
 
 ## CLI Usage
 
-After installation, the `mlx` command will be available in your PATH:
+After installation, the `mlx` command will be available in your PATH.
+
+> **📖 For a comprehensive end-to-end tutorial with detailed examples, see [docs/usage.md](docs/usage.md)**
 
 ### Quick Start
 
@@ -651,6 +692,15 @@ model-harness/
 ## Configuration
 
 MLX uses JSON or YAML configuration files to define experiment specifications. Configuration files enable repeatable, non-interactive experiment execution.
+
+**Sample Configurations:**
+- `experiments/example.json` / `experiments/example.yaml` - Comprehensive single experiment example
+- `experiments/multi_example.json` - Multi-experiment configuration with regression and classification
+- `examples/linear_regression_config.json` - Linear regression with gradient descent
+- `examples/synthetic_regression_config.json` - Basic synthetic data experiment
+- `examples/multi_experiment_config.json` - Sequential multi-experiment runs
+
+For detailed configuration guide and examples, see **[docs/usage.md](docs/usage.md)**.
 
 ### Configuration File Format
 
@@ -1342,6 +1392,198 @@ mlx eval [experiment_id] [--metrics METRIC [METRIC ...]] [--dry-run]
 - `--dry-run`: Perform a dry run without executing
 
 ## Edge Cases and Error Handling
+
+MLX provides comprehensive error handling and validation for common edge cases:
+
+### Output Directory Permissions
+
+**Issue**: Training fails if output directory lacks write permissions.
+
+**Detection**: MLX validates write permissions before creating run directories.
+
+**Error Example**:
+```
+Error: Permission denied: 'runs'
+```
+
+**Solutions**:
+```bash
+# Fix permissions
+chmod u+w runs/
+
+# Or change ownership
+sudo chown $USER:$USER runs/
+
+# Or use a different directory
+mlx run-experiment --config my-config.json  # Uses default 'runs/' directory
+```
+
+**Best Practice**: Ensure output directory has write permissions before running experiments. Test with dry-run mode first.
+
+### Deterministic Seeds
+
+**Purpose**: Ensures reproducible results across runs and machines.
+
+**Requirement**: Set seeds in three places for full reproducibility:
+```json
+{
+  "dataset": {"params": {"seed": 42}},
+  "model": {"params": {"seed": 42}},
+  "training": {"seed": 42}
+}
+```
+
+**Guarantees**:
+- Same seed + same config = identical outputs
+- Works across different runs and timestamps
+- Reproducible on same architecture
+
+**Platform Notes**:
+- Minor numerical differences may occur across 32-bit vs 64-bit systems
+- Different BLAS libraries may introduce small variations
+- Tolerance settings account for these differences while maintaining determinism
+
+**Testing**: See `tests/test_datasets_synthetic.py::test_deterministic_generation` for examples.
+
+### Non-existent Datasets/Models
+
+**Issue**: Referencing unsupported datasets or models in configs.
+
+**Detection**: Validation occurs during config parsing and dry-run.
+
+**Error Examples**:
+```
+Dataset 'imagenet' is not yet supported.
+Currently supported: synthetic_regression, synthetic_classification
+```
+
+**Supported Datasets**:
+- `synthetic_regression` - Linear regression with Gaussian noise (fully implemented)
+- `synthetic_classification` - Cluster-based classification (fully implemented)
+- `mnist`, `cifar10`, etc. - Listed but not yet implemented
+
+**Supported Models**:
+- `linear_regression` - Linear regression with closed-form or gradient descent (fully implemented)
+- `mlp` - Multi-layer perceptron (fully implemented)
+- Other models listed but not yet implemented
+
+**Best Practice**: Always use `--dry-run` to validate config before execution. Check current implementation status in `mlx/datasets/` and `mlx/models/`.
+
+### Local-Only Execution
+
+**Design Principle**: MLX operates entirely offline with no network dependencies.
+
+**Guarantees**:
+- ✅ No network I/O required for any operation
+- ✅ All data generated synthetically or loaded from local filesystem
+- ✅ No external APIs, cloud services, or remote datasets
+- ✅ Works in air-gapped environments
+- ✅ Fast execution (no network latency)
+
+**Implications**:
+- Dataset downloads not implemented (datasets must be synthetic or pre-downloaded)
+- No model pre-trained weight downloads
+- No metrics uploading to external services
+- Perfect for CI/CD, reproducibility, and privacy
+
+**Testing**: All tests run without network access. See `pytest.ini` configuration.
+
+### Memory Limits
+
+**Protection**: Synthetic datasets enforce a 1GB memory limit.
+
+**Rationale**: Prevents accidental resource exhaustion from misconfigured parameters.
+
+**Error Example**:
+```python
+dataset = SyntheticRegressionDataset(n_samples=10_000_000, n_features=1000)
+# Raises: ValueError("Dataset size exceeds 1GB limit")
+```
+
+**Calculation**: `size = n_samples * n_features * 8 bytes (float64)`
+
+**Workarounds**:
+1. Reduce dataset size
+2. Use batch processing
+3. Implement custom dataset with lazy loading
+
+**Testing**: See `tests/test_datasets_synthetic.py::test_memory_limit`.
+
+### Path Safety
+
+**Protection**: Output paths must resolve within repository root.
+
+**Rationale**: Prevents accidental writes outside workspace.
+
+**Error Example**:
+```json
+{
+  "output": {"directory": "../../etc"}  // Rejected
+}
+```
+
+**Valid Paths**:
+- `"runs"` - Relative to repo root
+- `"outputs/experiment-1"` - Nested relative path
+- `/home/user/workspace/runs` - Absolute within workspace (if workspace is /home/user/workspace)
+
+**Invalid Paths**:
+- `"../outside-workspace"` - Escapes workspace
+- `"/tmp/runs"` - Outside workspace (unless workspace is /tmp)
+
+**Testing**: See `tests/test_config.py` for path validation examples.
+
+### Conflicting Timestamps
+
+**Issue**: Multiple runs starting at exactly the same second.
+
+**Handling**: Automatic counter suffixing ensures uniqueness.
+
+**Behavior**:
+```
+runs/experiment/20251122_143025/      # First run
+runs/experiment/20251122_143025_1/    # Second run (same second)
+runs/experiment/20251122_143025_2/    # Third run (same second)
+```
+
+**Implementation**: See `mlx/training/output_manager.py::OutputManager._get_unique_run_dir()`.
+
+### Training Interruptions
+
+**Behavior**: Graceful handling of keyboard interrupts (Ctrl+C).
+
+**Preserved Outputs**:
+- Metrics written up to last completed epoch
+- Last completed checkpoint
+- Run directory and partial summary
+
+**Exit Codes**:
+- 130: Keyboard interrupt
+- 0: Success
+- 1: Error
+
+**Recovery**:
+```bash
+# Check what was saved
+ls -l runs/my-experiment/*/checkpoints/
+
+# Evaluate last checkpoint
+mlx eval --run-dir runs/my-experiment/20251122_143025 \
+         --checkpoint checkpoint_epoch_40
+```
+
+**Future Enhancement**: Resume from checkpoint (not yet implemented).
+
+### For More Edge Cases
+
+See **[docs/usage.md](docs/usage.md)** for additional troubleshooting scenarios including:
+- Configuration validation errors
+- Model convergence issues
+- Numerical stability (NaN/Inf handling)
+- Large dataset handling
+- Hyperparameter tuning strategies
+
+
 
 - **Python version check**: The package requires Python 3.8+. Install attempts with older versions will fail with a clear error.
 - **Missing arguments**: Required arguments (experiment_name, experiment_id) will cause the CLI to exit with status code 1 and an error message.
