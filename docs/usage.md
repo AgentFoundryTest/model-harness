@@ -564,7 +564,7 @@ training:
 **Output Path Resolution:**
 - Relative paths are resolved relative to repository root
 - Paths escaping the workspace (e.g., `../../etc`) are rejected
-- Default: `runs/` (creates timestamped subdirectories)
+- Default: `outputs/` (creates timestamped subdirectories)
 
 ## Running Experiments
 

@@ -39,11 +39,11 @@ MLX follows a structured workflow for running machine learning experiments:
 3. **Execution** - Run experiment and train model
 4. **Inspection** - Review outputs (metrics, checkpoints, logs)
 5. **Evaluation** - Re-evaluate trained models on datasets
-6. **History** - Track all runs via `runs/index.json`
+6. **History** - Track all runs via `<output-dir>/index.json`
 
 **Key Concepts:**
 - **Deterministic execution**: Set seeds in dataset, model, and training for reproducibility
-- **Timestamped outputs**: Each run gets a unique directory `runs/<experiment>/<timestamp>/`
+- **Timestamped outputs**: Each run gets a unique directory `<output-dir>/<experiment>/<timestamp>/`
 - **Multiple formats**: Metrics saved as JSON, NDJSON (streaming), and Markdown
 - **Checkpoint management**: Save model state at configurable intervals
 - **Local-only**: No network I/O, all operations on local filesystem
@@ -1400,8 +1400,8 @@ chmod u+w runs/
 # Or change ownership
 sudo chown $USER:$USER runs/
 
-# Or use a different directory
-mlx run-experiment --config my-config.json  # Uses default 'runs/' directory
+# Or specify a different directory in config
+# Note: Default output directory is 'outputs/' if not specified in config
 ```
 
 **Best Practice**: Ensure output directory has write permissions before running experiments. Test with dry-run mode first.
