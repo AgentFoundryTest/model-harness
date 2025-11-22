@@ -298,6 +298,57 @@ class ModelConfig:
             )
         
         return errors
+    
+    def create_model(self):
+        """
+        Create a model instance based on the configuration.
+        
+        Returns:
+            Model instance (BaseModel subclass)
+            
+        Raises:
+            ValueError: If model type is unknown or parameters are invalid
+        """
+        from mlx.models import LinearRegression, MLP
+        
+        model_name = self.name.lower()
+        
+        if model_name == "linear_regression":
+            # Extract parameters with defaults
+            seed = self.params.get("seed", None)
+            use_gradient_descent = self.params.get("use_gradient_descent", False)
+            l2_regularization = self.params.get("l2_regularization", 0.0)
+            
+            return LinearRegression(
+                seed=seed,
+                use_gradient_descent=use_gradient_descent,
+                l2_regularization=l2_regularization
+            )
+        
+        elif model_name == "mlp":
+            # Extract parameters
+            layer_sizes = self.params.get("layer_sizes")
+            if not layer_sizes:
+                raise ValueError(
+                    "MLP model requires 'layer_sizes' parameter in config"
+                )
+            
+            seed = self.params.get("seed", None)
+            activation = self.params.get("activation", "relu")
+            output_activation = self.params.get("output_activation", None)
+            
+            return MLP(
+                layer_sizes=layer_sizes,
+                seed=seed,
+                activation=activation,
+                output_activation=output_activation
+            )
+        
+        else:
+            raise ValueError(
+                f"Cannot instantiate model '{self.name}'. "
+                f"Supported models: linear_regression, mlp"
+            )
 
 
 @dataclass
@@ -513,15 +564,15 @@ class ConfigLoader:
     """Loader for experiment configurations from JSON/YAML files."""
     
     @staticmethod
-    def load_from_file(config_path: Union[str, Path]) -> ExperimentConfig:
+    def load_from_file(config_path: Union[str, Path]) -> Union[ExperimentConfig, List[ExperimentConfig]]:
         """
-        Load experiment configuration from a file.
+        Load experiment configuration(s) from a file.
         
         Args:
             config_path: Path to configuration file (JSON or YAML)
             
         Returns:
-            Loaded and validated ExperimentConfig
+            Single ExperimentConfig or list of ExperimentConfig for multi-experiment runs
             
         Raises:
             FileNotFoundError: If config file doesn't exist
@@ -546,12 +597,19 @@ class ConfigLoader:
                 f"Supported formats: .json, .yaml, .yml"
             )
         
-        # Parse and validate
-        return ConfigLoader._parse_config(data)
+        # Parse and validate - handle both single config and list of configs
+        if isinstance(data, list):
+            # Multi-experiment config
+            if not data:
+                raise ValueError("Configuration list is empty")
+            return [ConfigLoader._parse_config(item) for item in data]
+        else:
+            # Single experiment config
+            return ConfigLoader._parse_config(data)
     
     @staticmethod
-    def _load_json(path: Path) -> Dict[str, Any]:
-        """Load JSON configuration file."""
+    def _load_json(path: Path) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """Load JSON configuration file (supports both single object and array of objects)."""
         try:
             with open(path, 'r') as f:
                 return json.load(f)
@@ -562,8 +620,8 @@ class ConfigLoader:
             )
     
     @staticmethod
-    def _load_yaml(path: Path) -> Dict[str, Any]:
-        """Load YAML configuration file."""
+    def _load_yaml(path: Path) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        """Load YAML configuration file (supports both single object and array of objects)."""
         if not YAML_AVAILABLE:
             raise ValueError(
                 "YAML support not available. Please install PyYAML:\n"

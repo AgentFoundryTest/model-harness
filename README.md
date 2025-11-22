@@ -30,6 +30,8 @@ This allows you to modify the code without reinstalling.
 
 After installation, the `mlx` command will be available in your PATH:
 
+### Quick Start
+
 ```bash
 # Show help
 mlx --help
@@ -38,22 +40,227 @@ mlx --help
 mlx --version
 
 # Run an experiment with configuration file
-mlx run-experiment --config examples/mnist_config.json
+mlx run-experiment --config examples/linear_regression_config.json
 
-# Dry run with configuration (validates config without execution)
-mlx run-experiment --dry-run --config examples/mnist_config.json
+# Dry run (validates config without execution)
+mlx run-experiment --dry-run --config examples/linear_regression_config.json
 
-# Run an experiment (legacy mode without config)
-mlx run-experiment my_experiment
+# Evaluate a trained model
+mlx eval --config examples/linear_regression_config.json --run-dir runs/my-experiment/20241122_143025
+```
 
-# Evaluate experiment results
-mlx eval experiment_123
+### End-to-End Training Workflow
 
-# Evaluate with specific metrics
-mlx eval experiment_123 --metrics accuracy f1_score
+Complete workflow for training a linear regression model:
+
+```bash
+# 1. Create or use an existing configuration file
+cat > my_config.json << 'EOF'
+{
+  "name": "my-linear-regression",
+  "description": "Linear regression on synthetic data",
+  "dataset": {
+    "name": "synthetic_regression",
+    "params": {
+      "n_samples": 1000,
+      "n_features": 10,
+      "noise_std": 0.1,
+      "seed": 42
+    }
+  },
+  "model": {
+    "name": "linear_regression",
+    "params": {
+      "seed": 42,
+      "use_gradient_descent": true
+    }
+  },
+  "training": {
+    "epochs": 50,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "seed": 42
+  },
+  "output": {
+    "directory": "runs",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 10
+  }
+}
+EOF
+
+# 2. Validate configuration with dry run
+mlx run-experiment --dry-run --config my_config.json
+
+# 3. Run the experiment
+mlx run-experiment --config my_config.json
+
+# Output will show:
+# - Dataset creation
+# - Model initialization
+# - Training progress
+# - Final metrics
+# - Output paths (run directory, checkpoints, metrics)
+```
+
+### Evaluation Workflow
+
+Evaluate a trained model without retraining:
+
+```bash
+# Option 1: Provide both config and run directory
+mlx eval --config my_config.json --run-dir runs/my-linear-regression/20241122_143025
+
+# Option 2: Use run directory only (config loaded from run directory)
+mlx eval --run-dir runs/my-linear-regression/20241122_143025
+
+# Evaluate a specific checkpoint (default is checkpoint_final)
+mlx eval --run-dir runs/my-linear-regression/20241122_143025 --checkpoint checkpoint_epoch_20
 
 # Dry run evaluation
-mlx eval --dry-run
+mlx eval --dry-run --run-dir runs/my-linear-regression/20241122_143025
+```
+
+### Dry-Run Mode
+
+Use dry-run mode to validate configuration and see execution plan without running:
+
+```bash
+# Dry run for training
+mlx run-experiment --dry-run --config my_config.json
+
+# Output shows:
+# - Parsed configuration
+# - Planned steps (dataset, model, training, output)
+# - Validation status
+
+# Dry run for evaluation
+mlx eval --dry-run --config my_config.json --run-dir runs/my-experiment/20241122_143025
+
+# Output shows:
+# - Configuration source
+# - Checkpoint to load
+# - Steps that would be executed
+```
+
+### Viewing Run History
+
+MLX automatically tracks all experiment runs in `runs/index.json`. You can view and query this history:
+
+```bash
+# View the complete run history
+cat runs/index.json | python -m json.tool
+
+# List all runs for a specific experiment
+cat runs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
+
+# View summary of a specific run
+cat runs/my-experiment/20241122_143025/summary.json | python -m json.tool
+
+# View metrics for a specific run
+cat runs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
+
+# View human-readable metrics summary
+cat runs/my-experiment/20241122_143025/metrics/metrics.md
+```
+
+#### Run History Structure
+
+The `runs/index.json` file contains a list of all experiments:
+
+```json
+{
+  "runs": [
+    {
+      "experiment": "my-experiment",
+      "timestamp": "20241122_143025",
+      "run_dir": "my-experiment/20241122_143025",
+      "created_at": "2024-11-22T14:30:25.123456"
+    }
+  ]
+}
+```
+
+#### Programmatic History Access
+
+You can also access run history programmatically using Python:
+
+```python
+from mlx.history import list_all_runs, get_runs_by_experiment, generate_markdown_summary
+from pathlib import Path
+
+# List all runs
+runs = list_all_runs(Path("runs/index.json"))
+print(f"Total runs: {len(runs)}")
+
+# Get runs for specific experiment
+my_runs = get_runs_by_experiment(Path("runs/index.json"), "my-experiment")
+for run in my_runs:
+    print(f"  {run['timestamp']}: {run['run_dir']}")
+
+# Generate Markdown summary
+summary = generate_markdown_summary(runs, output_path=Path("runs/HISTORY.md"))
+print(summary)
+```
+
+### Multi-Experiment Runs
+
+Run multiple experiments sequentially by providing a JSON array of configurations:
+
+```bash
+# Create multi-experiment config
+cat > multi_config.json << 'EOF'
+[
+  {
+    "name": "experiment-1",
+    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 100}},
+    "model": {"name": "linear_regression"},
+    "training": {"epochs": 10}
+  },
+  {
+    "name": "experiment-2",
+    "dataset": {"name": "synthetic_regression", "params": {"n_samples": 200}},
+    "model": {"name": "linear_regression"},
+    "training": {"epochs": 10}
+  }
+]
+EOF
+
+# Dry run multi-experiment
+mlx run-experiment --dry-run --config multi_config.json
+
+# Run all experiments sequentially
+mlx run-experiment --config multi_config.json
+```
+
+**Behavior:**
+- Experiments execute in order
+- First failure stops remaining experiments
+- Each experiment gets its own timestamped directory
+- All runs are tracked in `runs/index.json`
+
+### Command-Line Options
+
+#### run-experiment
+
+```bash
+mlx run-experiment [OPTIONS]
+
+Options:
+  --config PATH       Path to experiment configuration file (required unless --dry-run)
+  --dry-run          Validate config and show execution plan without running
+```
+
+#### eval
+
+```bash
+mlx eval [OPTIONS]
+
+Options:
+  --config PATH         Path to experiment config (optional, for regenerating dataset)
+  --run-dir PATH        Path to run directory containing checkpoint (required)
+  --checkpoint NAME     Name of checkpoint to evaluate (default: checkpoint_final)
+  --dry-run            Show evaluation plan without executing
 ```
 
 ### Python Module Invocation
@@ -62,28 +269,137 @@ You can also invoke the CLI using Python's module syntax:
 
 ```bash
 python -m mlx --help
-python -m mlx run-experiment my_experiment
-python -m mlx eval experiment_123
+python -m mlx run-experiment --config my_config.json
+python -m mlx eval --run-dir runs/my-experiment/20241122_143025
 ```
+
+### Output Structure
+
+After running an experiment, outputs are organized as follows:
+
+```
+runs/
+└── my-experiment/
+    └── 20241122_143025/              # Timestamped run directory
+        ├── config.json               # Experiment configuration
+        ├── summary.json              # Run summary with final metrics
+        ├── checkpoints/
+        │   ├── checkpoint_epoch_10/  # Periodic checkpoints
+        │   ├── checkpoint_epoch_20/
+        │   └── checkpoint_final/     # Final trained model
+        └── metrics/
+            ├── metrics.json          # Complete metrics history
+            ├── metrics.ndjson        # Streaming metrics (one per line)
+            └── metrics.md            # Markdown summary
+```
+
+### Troubleshooting
+
+#### Configuration Errors
+
+```bash
+# Error: Missing required field
+Error: Configuration validation failed:
+  - Missing required field: 'name'
+
+# Solution: Ensure all required fields are present (name, dataset, model)
+```
+
+```bash
+# Error: Unknown dataset
+Error: Configuration validation failed:
+  - Unknown dataset 'my_dataset'. Known datasets: mnist, cifar10, synthetic_regression, ...
+
+# Solution: Use a supported dataset or check spelling
+```
+
+#### Path Errors
+
+```bash
+# Error: Config file not found
+Error: Configuration file not found: my_config.json
+Please provide a valid config file path.
+
+# Solution: Check file path and ensure file exists
+```
+
+```bash
+# Error: Run directory not found
+Error: Run directory not found: runs/experiment/20241122_143025
+
+# Solution: Verify run directory path from training output
+```
+
+#### Model/Dataset Errors
+
+```bash
+# Error: Model not yet supported
+Dataset 'mnist' is not yet supported.
+Currently supported: synthetic_regression, synthetic_classification
+
+# Solution: Use a supported dataset or implement custom dataset handler
+```
+
+#### Keyboard Interrupts
+
+If you interrupt training with Ctrl+C:
+- Partial outputs are preserved (metrics written per epoch)
+- Last completed checkpoint is saved
+- Exit code 130 indicates keyboard interrupt
+
+```bash
+# Resume from checkpoint (future enhancement)
+# Currently: restart training from scratch
+```
+
+### Best Practices
+
+1. **Always dry-run first**: Validate configuration before long training runs
+2. **Use seeds for reproducibility**: Set seed in dataset, model, and training config
+3. **Check output paths**: Verify run directory location after training starts
+4. **Monitor metrics**: Use metrics.ndjson for streaming progress tracking
+5. **Save checkpoints frequently**: Set appropriate checkpoint_frequency for long runs
 
 ## Repository Structure
 
 ```
 model-harness/
-├── mlx/                    # Main package directory
-│   ├── __init__.py        # Package initialization
-│   ├── __main__.py        # Entry point for python -m mlx
-│   ├── cli.py             # Command-line interface
-│   ├── config.py          # Configuration loading and validation
-│   └── utils/             # Utility modules
+├── mlx/                          # Main package directory
+│   ├── __init__.py              # Package initialization
+│   ├── __main__.py              # Entry point for python -m mlx
+│   ├── cli.py                   # Command-line interface
+│   ├── config.py                # Configuration loading and validation
+│   ├── runner.py                # Training/evaluation workflow orchestration
+│   ├── evaluation.py            # Model evaluation utilities
+│   ├── datasets/                # Dataset implementations
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base dataset abstraction
+│   │   └── synthetic.py        # Synthetic dataset generators
+│   ├── models/                  # Model implementations
+│   │   ├── __init__.py
+│   │   ├── base.py             # Base model abstraction
+│   │   ├── linear.py           # Linear regression
+│   │   └── mlp.py              # Multi-layer perceptron
+│   ├── training/                # Training pipeline
+│   │   ├── __init__.py
+│   │   ├── loop.py             # Training loop
+│   │   └── output_manager.py  # Output directory management
+│   ├── metrics/                 # Metrics computation and writing
+│   │   ├── __init__.py
+│   │   └── writer.py           # Metrics serialization
+│   ├── history/                 # Experiment history tracking
+│   │   ├── __init__.py
+│   │   └── index.py            # Run index management
+│   └── utils/                   # Utility modules
 │       ├── __init__.py
-│       └── paths.py       # Path resolution utilities
-├── examples/               # Example configuration files
-│   ├── mnist_config.json  # MNIST experiment config
-│   └── cifar10_config.yaml # CIFAR-10 experiment config
-├── pyproject.toml         # Project metadata and dependencies
-├── README.md              # This file
-└── LICENSE                # GPLv3 license
+│       ├── paths.py            # Path resolution utilities
+│       └── serialization.py    # Model serialization
+├── examples/                     # Example configuration files
+│   └── train_linear_regression.py  # Python training example
+├── tests/                        # Test suite
+├── pyproject.toml               # Project metadata and dependencies
+├── README.md                    # This file
+└── LICENSE                      # GPLv3 license
 ```
 
 ## Configuration
