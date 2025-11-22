@@ -580,7 +580,7 @@ Error: Configuration validation failed:
 ```bash
 # Error: Unknown dataset
 Error: Configuration validation failed:
-  - Unknown dataset 'my_dataset'. Known datasets: mnist, cifar10, synthetic_regression, ...
+  - Unknown dataset 'my_dataset'. Currently supported: synthetic_regression, synthetic_classification
 
 # Solution: Use a supported dataset or check spelling
 ```
@@ -715,7 +715,9 @@ Both JSON and YAML formats are supported. The configuration must include:
 | `path` | string | No | Path to dataset files (for custom datasets) |
 | `params` | object | No | Additional dataset-specific parameters |
 
-**Known datasets**: mnist, cifar10, cifar100, imagenet, custom, synthetic_regression, synthetic_classification
+**Currently supported datasets**: `synthetic_regression`, `synthetic_classification`
+
+**Note**: Other datasets (`mnist`, `cifar10`, `cifar100`, `imagenet`) are listed in examples but not yet implemented. Using them will result in an error.
 
 #### Synthetic Datasets
 
@@ -796,11 +798,13 @@ This ensures:
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | Model identifier (resnet, vgg, mobilenet, efficientnet, custom) |
-| `architecture` | string | No | Specific architecture variant |
-| `params` | object | No | Model-specific parameters (e.g., num_classes, dropout) |
+| `name` | string | Yes | Model identifier (`linear_regression`, `mlp`) |
+| `architecture` | string | No | Specific architecture variant (for future CNN support) |
+| `params` | object | No | Model-specific parameters (e.g., layer_sizes, seed) |
 
-**Known model types**: resnet, vgg, mobilenet, efficientnet, custom, linear_regression, mlp
+**Currently supported models**: `linear_regression`, `mlp`
+
+**Note**: Other models (`resnet`, `vgg`, `mobilenet`, `efficientnet`) are listed in examples but not yet implemented. Using them will result in an error.
 
 ## Models
 
@@ -1449,10 +1453,12 @@ Currently supported: synthetic_regression, synthetic_classification
 **Supported Datasets**:
 - `synthetic_regression` - Linear regression with Gaussian noise (fully implemented)
 - `synthetic_classification` - Cluster-based classification (fully implemented)
-- `mnist`, `cifar10`, etc. - Listed but not yet implemented
 
 **Supported Models**:
 - `linear_regression` - Linear regression with closed-form or gradient descent (fully implemented)
+- `mlp` - Multi-layer perceptron (fully implemented)
+
+**Note**: Example config files may reference datasets like `mnist` or `cifar10`, but these are not yet implemented and will fail if executed. Use `synthetic_regression` or `synthetic_classification` for working examples.
 - `mlp` - Multi-layer perceptron (fully implemented)
 - Other models listed but not yet implemented
 

@@ -876,7 +876,7 @@ Error: Configuration validation failed:
 **Error: Unknown dataset**
 ```
 Error: Configuration validation failed:
-  - Unknown dataset 'my_dataset'. Known datasets: mnist, cifar10, synthetic_regression, ...
+  - Unknown dataset 'my_dataset'. Currently supported: synthetic_regression, synthetic_classification
 ```
 
 **Solution:** Use a supported dataset or check spelling.
