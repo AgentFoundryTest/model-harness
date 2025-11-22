@@ -278,6 +278,21 @@ def run_evaluation(
         print()
         if config_path:
             print(f"Config: {config_path}")
+            
+            # Validate config file (same as non-dry-run path)
+            try:
+                config_or_configs = ConfigLoader.load_from_file(config_path)
+                if isinstance(config_or_configs, list):
+                    raise RunnerError(
+                        f"Multi-experiment config files are not supported for evaluation. "
+                        f"The config file contains {len(config_or_configs)} experiments. "
+                        f"Please provide a single experiment config or load config from run directory using --run-dir only."
+                    )
+            except RunnerError:
+                raise
+            except Exception as e:
+                raise RunnerError(f"Failed to load config: {e}")
+        
         if run_dir:
             print(f"Run directory: {run_dir}")
         print(f"Checkpoint: {checkpoint_name}")
