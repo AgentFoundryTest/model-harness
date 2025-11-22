@@ -49,7 +49,7 @@ Use this checklist for each release to ensure consistency and completeness.
 - [ ] **Verify all tests pass**
   ```bash
   pytest -v
-  # Ensure all 258+ tests pass
+  # Ensure all tests pass
   ```
 
 - [ ] **Verify code quality**
