@@ -395,17 +395,17 @@ mlx run-experiment --config my_config.json
 Evaluate a trained model without retraining:
 
 ```bash
-# Option 1: Provide both config and run directory (adjust path based on output.directory)
-mlx eval --config my_config.json --run-dir outputs/my-linear-regression/20241122_143025
+# Option 1: Provide both config and run directory (path matches output.directory from config above: "runs")
+mlx eval --config my_config.json --run-dir runs/my-linear-regression/20241122_143025
 
 # Option 2: Use run directory only (config loaded from run directory)
-mlx eval --run-dir outputs/my-linear-regression/20241122_143025
+mlx eval --run-dir runs/my-linear-regression/20241122_143025
 
 # Evaluate a specific checkpoint (default is checkpoint_final)
-mlx eval --run-dir outputs/my-linear-regression/20241122_143025 --checkpoint checkpoint_epoch_20
+mlx eval --run-dir runs/my-linear-regression/20241122_143025 --checkpoint checkpoint_epoch_20
 
 # Dry run evaluation
-mlx eval --dry-run --run-dir outputs/my-linear-regression/20241122_143025
+mlx eval --dry-run --run-dir runs/my-linear-regression/20241122_143025
 ```
 
 ### Dry-Run Mode
@@ -1369,8 +1369,8 @@ Run a machine learning experiment:
 mlx run-experiment --config CONFIG [--dry-run]
 ```
 
-- `--config`: Path to experiment configuration file (required)
-- `--dry-run`: Perform a dry run without executing
+- `--config`: Path to experiment configuration file (required for actual runs, optional for dry-run)
+- `--dry-run`: Perform a dry run without executing (can be used without --config to see general workflow)
 
 **Note**: The experiment name is read from the configuration file, not from the command line.
 
