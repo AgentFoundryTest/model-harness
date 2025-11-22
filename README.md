@@ -12,19 +12,265 @@ pip install .
 
 ### Editable/Development Installation
 
-For development, install in editable mode:
+For development, install in editable mode with development dependencies:
 
 ```bash
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-This allows you to modify the code without reinstalling.
+This installs the package in editable mode along with pytest and other development tools, allowing you to modify the code without reinstalling.
 
 ### Requirements
 
 - Python 3.8 or higher
 - numpy >= 1.20.0
 - pyyaml >= 5.1 (for YAML configuration support)
+
+#### Development Dependencies
+
+- pytest >= 7.0 (for running tests)
+
+## Testing
+
+MLX includes a comprehensive automated test suite to ensure reliability and deterministic behavior.
+
+### Running Tests
+
+#### Quick Start
+
+Run all tests with pytest:
+
+```bash
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_datasets_synthetic.py
+
+# Run specific test class
+pytest tests/test_models_linear.py::TestLinearRegressionClosedForm
+
+# Run specific test method
+pytest tests/test_datasets_synthetic.py::TestSyntheticRegressionDataset::test_deterministic_generation
+```
+
+### Test Coverage
+
+The comprehensive test suite covers:
+
+- **Configuration validation** (`tests/test_config_datasets.py`)
+  - Valid and invalid config parsing
+  - Type checking and constraint validation
+  - Dataset parameter validation
+  - Error message correctness
+
+- **Dataset generation** (`tests/test_datasets_synthetic.py`, `tests/test_datasets_base.py`)
+  - Deterministic generation (same seed → same data)
+  - Seed independence (different seeds → different data)
+  - Metadata validation
+  - Memory limits and edge cases
+
+- **Model implementations** (`tests/test_models_*.py`)
+  - BaseModel API contract compliance
+  - Model training and gradient updates
+  - Serialization and checkpoint loading
+  - Numerical stability and edge cases
+
+- **Training pipeline** (`tests/test_training_integration.py`, `tests/test_output_manager.py`)
+  - End-to-end training workflows
+  - Checkpoint saving and loading
+  - Metrics computation and serialization
+  - Output directory management
+
+- **Metrics and serialization** (`tests/test_metrics_writer.py`, `tests/test_serialization.py`)
+  - NumPy type handling
+  - NaN/Inf sanitization
+  - JSON encoding with custom types
+  - Metrics history tracking
+
+### Determinism and Reproducibility
+
+MLX enforces deterministic behavior throughout the system:
+
+#### Seed Control
+
+All random operations accept a `seed` parameter for reproducibility:
+
+```python
+# Same seed → identical results
+dataset = SyntheticRegressionDataset(n_samples=100, n_features=5)
+X1, y1 = dataset.generate(seed=42)
+X2, y2 = dataset.generate(seed=42)
+assert np.array_equal(X1, X2)  # Always true
+assert np.array_equal(y1, y2)  # Always true
+
+# Different seeds → different results
+X3, y3 = dataset.generate(seed=123)
+assert not np.array_equal(X1, X3)  # Always true
+```
+
+#### Test Determinism
+
+Tests verify deterministic behavior:
+
+```bash
+# Run determinism tests
+pytest -v -k deterministic
+
+# Example output:
+# test_deterministic_generation PASSED
+# test_different_seeds_produce_different_data PASSED
+# test_config_with_seed_produces_deterministic_data PASSED
+```
+
+#### Floating Point Tolerance
+
+Tests use appropriate tolerances for numerical comparisons:
+
+- **Strict equality**: For deterministic operations with same seed
+  ```python
+  np.testing.assert_array_equal(X1, X2)  # Exact equality
+  ```
+
+- **Close equality**: For operations with acceptable numerical variance
+  ```python
+  np.testing.assert_allclose(predictions, expected, rtol=1e-6, atol=1e-8)
+  ```
+
+Platform differences (32-bit vs 64-bit, different BLAS libraries) are accounted for in tolerance settings while maintaining determinism guarantees.
+
+### Temporary Directory Management
+
+Pytest automatically manages temporary directories for tests:
+
+- Each test using `tmp_path` fixture gets a unique temporary directory
+- Directories are automatically cleaned up after test completion
+- No cross-test contamination
+- Configurable retention for debugging (see `pytest.ini`)
+
+```python
+def test_training_with_temp_dir(tmp_path):
+    """Test automatically gets a clean temp directory."""
+    output_dir = tmp_path / "runs"
+    # ... test code ...
+    # Directory is automatically cleaned up after test
+```
+
+### Test Configuration
+
+The `pytest.ini` file configures test behavior:
+
+- Test discovery patterns
+- Output verbosity
+- Temporary directory cleanup
+- Warning filters
+- Logging settings
+
+Key settings for determinism:
+
+```ini
+# Temporary directory cleanup
+# pytest automatically cleans up tmp_path directories after each test
+# Note: tmp_path_retention_count/policy require pytest>=7.3
+# These are commented out to maintain compatibility with pytest>=7.0
+
+# Allow expected warnings from numerical operations
+filterwarnings =
+    default::UserWarning:mlx.models.linear
+    default::UserWarning:mlx.models.mlp
+```
+
+**Note**: If using pytest>=7.3, you can uncomment `tmp_path_retention_count` and `tmp_path_retention_policy` in pytest.ini to retain temporary directories for debugging.
+
+### Continuous Integration
+
+Tests are designed to run in CI environments:
+
+- No network access required
+- No external dependencies beyond Python packages
+- No filesystem writes outside temp directories
+- Deterministic execution (no flaky tests)
+- Fast execution (< 1 minute for full suite)
+
+### Edge Cases and Constraints
+
+Tests verify proper handling of edge cases:
+
+- **Memory limits**: Datasets > 1GB are rejected
+- **Singular matrices**: Closed-form linear regression uses pseudoinverse
+- **Numerical overflow**: MLP uses gradient clipping
+- **NaN/Inf values**: Metrics are sanitized before serialization
+- **Invalid configurations**: Clear error messages for validation failures
+
+### Optional Dependencies
+
+Some features may require optional dependencies. The test suite is designed to run with only the core dependencies (numpy, pyyaml, pytest):
+
+```bash
+# Core testing works without additional dependencies
+pytest
+
+# Optional: Install plotting dependencies for visualization features
+pip install matplotlib seaborn
+```
+
+### Troubleshooting Tests
+
+#### Test Failures
+
+If tests fail, run with more verbose output:
+
+```bash
+# Show full tracebacks
+pytest -vv
+
+# Show local variables in failures
+pytest -l
+
+# Show print statements
+pytest -s
+
+# Run only failed tests from last run
+pytest --lf
+
+# Run failed tests first, then others
+pytest --ff
+```
+
+#### Debugging Tests
+
+Use pytest's debugging features:
+
+```bash
+# Drop into debugger on failure
+pytest --pdb
+
+# Drop into debugger at start of test
+pytest --trace
+
+# Show 10 slowest tests
+pytest --durations=10
+```
+
+#### Common Issues
+
+**Tests pass individually but fail when run together:**
+- Likely a test isolation issue
+- Check for shared state or global variables
+- Ensure each test uses `tmp_path` for file operations
+
+**Numerical precision errors:**
+- Check floating point comparison tolerances
+- Use `np.testing.assert_allclose` instead of `assert_array_equal`
+- Consider platform-specific numerical differences
+
+**Flaky tests (pass/fail randomly):**
+- Ensure all random operations use explicit seeds
+- Check for uninitialized variables or timing dependencies
+- Review test for implicit assumptions about execution order
 
 ## CLI Usage
 
