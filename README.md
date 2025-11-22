@@ -332,8 +332,8 @@ mlx run-experiment --config examples/linear_regression_config.json
 # Dry run (validates config without execution)
 mlx run-experiment --dry-run --config examples/linear_regression_config.json
 
-# Evaluate a trained model
-mlx eval --config examples/linear_regression_config.json --run-dir runs/my-experiment/20241122_143025
+# Evaluate a trained model (adjust path based on output.directory in config)
+mlx eval --config examples/linear_regression_config.json --run-dir outputs/my-experiment/20241122_143025
 ```
 
 ### End-to-End Training Workflow
@@ -395,17 +395,17 @@ mlx run-experiment --config my_config.json
 Evaluate a trained model without retraining:
 
 ```bash
-# Option 1: Provide both config and run directory
-mlx eval --config my_config.json --run-dir runs/my-linear-regression/20241122_143025
+# Option 1: Provide both config and run directory (adjust path based on output.directory)
+mlx eval --config my_config.json --run-dir outputs/my-linear-regression/20241122_143025
 
 # Option 2: Use run directory only (config loaded from run directory)
-mlx eval --run-dir runs/my-linear-regression/20241122_143025
+mlx eval --run-dir outputs/my-linear-regression/20241122_143025
 
 # Evaluate a specific checkpoint (default is checkpoint_final)
-mlx eval --run-dir runs/my-linear-regression/20241122_143025 --checkpoint checkpoint_epoch_20
+mlx eval --run-dir outputs/my-linear-regression/20241122_143025 --checkpoint checkpoint_epoch_20
 
 # Dry run evaluation
-mlx eval --dry-run --run-dir runs/my-linear-regression/20241122_143025
+mlx eval --dry-run --run-dir outputs/my-linear-regression/20241122_143025
 ```
 
 ### Dry-Run Mode
@@ -542,7 +542,7 @@ You can also invoke the CLI using Python's module syntax:
 ```bash
 python -m mlx --help
 python -m mlx run-experiment --config my_config.json
-python -m mlx eval --run-dir runs/my-experiment/20241122_143025
+python -m mlx eval --run-dir outputs/my-experiment/20241122_143025
 ```
 
 ### Output Structure
@@ -1562,11 +1562,11 @@ runs/experiment/20251122_143025_2/    # Third run (same second)
 
 **Recovery**:
 ```bash
-# Check what was saved
-ls -l runs/my-experiment/*/checkpoints/
+# Check what was saved (adjust path based on output.directory)
+ls -l outputs/my-experiment/*/checkpoints/
 
 # Evaluate last checkpoint
-mlx eval --run-dir runs/my-experiment/20251122_143025 \
+mlx eval --run-dir outputs/my-experiment/20251122_143025 \
          --checkpoint checkpoint_epoch_40
 ```
 

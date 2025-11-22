@@ -619,7 +619,7 @@ You can also invoke the CLI using Python:
 ```bash
 python -m mlx --help
 python -m mlx run-experiment --config my-config.json
-python -m mlx eval --run-dir runs/my-experiment/20251122_143025
+python -m mlx eval --run-dir outputs/my-experiment/20251122_143025
 ```
 
 ## Inspecting Outputs
@@ -712,17 +712,17 @@ predictions = model.predict(X_test)
 ### Basic Evaluation
 
 ```bash
-# Evaluate final checkpoint
-mlx eval --run-dir runs/my-experiment/20251122_143025
+# Evaluate final checkpoint (adjust path based on output.directory in config)
+mlx eval --run-dir outputs/my-experiment/20251122_143025
 
 # Evaluate specific checkpoint
-mlx eval --run-dir runs/my-experiment/20251122_143025 --checkpoint checkpoint_epoch_20
+mlx eval --run-dir outputs/my-experiment/20251122_143025 --checkpoint checkpoint_epoch_20
 ```
 
 ### Dry-Run Evaluation
 
 ```bash
-mlx eval --dry-run --run-dir runs/my-experiment/20251122_143025
+mlx eval --dry-run --run-dir outputs/my-experiment/20251122_143025
 ```
 
 ### Evaluation with Custom Config
@@ -1035,10 +1035,10 @@ Error: Model 'mlp' requires 'layer_sizes' parameter
 **Recovery:**
 ```bash
 # Check what was saved
-ls -l runs/my-experiment/*/checkpoints/
+ls -l outputs/my-experiment/*/checkpoints/
 
 # Evaluate last checkpoint
-mlx eval --run-dir runs/my-experiment/20251122_143025 \
+mlx eval --run-dir outputs/my-experiment/20251122_143025 \
          --checkpoint checkpoint_epoch_40
 ```
 
