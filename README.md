@@ -2,7 +2,13 @@
 
 A lightweight Python framework for running and evaluating machine learning experiments.
 
+**Current Version:** 0.1.0 | [Changelog](CHANGELOG.md) | [Release Notes](CHANGELOG.md#release-notes)
+
 ## Installation
+
+### From Source (Current)
+
+The package is currently installed from source. Future releases will be available via PyPI.
 
 ### Standard Installation
 
