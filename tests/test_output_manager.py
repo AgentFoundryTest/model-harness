@@ -113,3 +113,69 @@ class TestOutputManager:
                 base_dir="../../../tmp",
                 validate_safety=True
             )
+    
+    def test_path_traversal_in_experiment_name_rejected(self, tmp_path):
+        """Test that experiment names with path traversal are rejected."""
+        with pytest.raises(ValueError, match="invalid path characters"):
+            OutputManager(
+                experiment_name="../outside",
+                base_dir=str(tmp_path / "runs"),
+                validate_safety=False
+            )
+        
+        with pytest.raises(ValueError, match="invalid path characters"):
+            OutputManager(
+                experiment_name="test/../outside",
+                base_dir=str(tmp_path / "runs"),
+                validate_safety=False
+            )
+        
+        with pytest.raises(ValueError, match="invalid path characters"):
+            OutputManager(
+                experiment_name="test/subdir",
+                base_dir=str(tmp_path / "runs"),
+                validate_safety=False
+            )
+    
+    def test_timestamp_updated_on_conflict(self, tmp_path):
+        """Test that timestamp is updated when conflict suffix is added."""
+        timestamp = "20240101_120000"
+        
+        # Create first manager
+        manager1 = OutputManager(
+            experiment_name="test",
+            base_dir=str(tmp_path / "runs"),
+            timestamp=timestamp,
+            maintain_index=True,
+            validate_safety=False
+        )
+        
+        # Verify first manager has original timestamp
+        assert manager1.timestamp == timestamp
+        
+        # Create second manager with same timestamp
+        manager2 = OutputManager(
+            experiment_name="test",
+            base_dir=str(tmp_path / "runs"),
+            timestamp=timestamp,
+            maintain_index=True,
+            validate_safety=False
+        )
+        
+        # Verify second manager has updated timestamp with suffix
+        assert manager2.timestamp == f"{timestamp}_1"
+        
+        # Verify run directories match timestamps
+        assert manager1.run_dir.name == timestamp
+        assert manager2.run_dir.name == f"{timestamp}_1"
+        
+        # Verify index has correct timestamps
+        index_path = manager1.base_dir / "index.json"
+        with open(index_path, 'r') as f:
+            index = json.load(f)
+        
+        assert len(index["runs"]) == 2
+        assert index["runs"][0]["timestamp"] == timestamp
+        assert index["runs"][0]["run_dir"] == f"test/{timestamp}"
+        assert index["runs"][1]["timestamp"] == f"{timestamp}_1"
+        assert index["runs"][1]["run_dir"] == f"test/{timestamp}_1"

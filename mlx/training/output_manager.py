@@ -50,6 +50,14 @@ class OutputManager:
                 f"Base directory '{base_dir}' resolves outside the repository root"
             )
         
+        # Sanitize experiment name to prevent path traversal
+        sanitized_name = experiment_name.replace('/', '_').replace('\\', '_').replace('..', '_')
+        if sanitized_name != experiment_name:
+            raise ValueError(
+                f"Experiment name '{experiment_name}' contains invalid path characters. "
+                f"Use alphanumeric characters, hyphens, and underscores only."
+            )
+        
         self.experiment_name = experiment_name
         self.base_dir = resolve_path(base_dir)
         self.maintain_index = maintain_index
@@ -91,6 +99,8 @@ class OutputManager:
             if attempt > 0:
                 # Add counter suffix for uniqueness
                 self.run_dir = base_run_dir.parent / f"{base_run_dir.name}_{attempt}"
+                # Update timestamp to match the actual directory name
+                self.timestamp = f"{self.timestamp}_{attempt}"
                 self.checkpoint_dir = self.run_dir / "checkpoints"
                 self.metrics_dir = self.run_dir / "metrics"
                 self.config_path = self.run_dir / "config.json"
