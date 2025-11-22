@@ -56,7 +56,7 @@ The MLX experiment harness follows a structured lifecycle:
 3. Execution        → Run experiment and train model
 4. Inspection       → Review outputs (metrics, logs, checkpoints)
 5. Evaluation       → Re-evaluate trained models without retraining
-6. History Tracking → Query past runs via runs/index.json
+6. History Tracking → Query past runs via `<output-dir>/index.json` (default: `outputs/index.json`)
 ```
 
 ### Phase 1: Configuration
@@ -343,10 +343,13 @@ Metrics:
 
 ### Phase 6: History Tracking
 
-MLX automatically tracks all experiment runs in `runs/index.json`:
+MLX automatically tracks all experiment runs in `<output-dir>/index.json` (by default: `outputs/index.json`):
 
 ```bash
-# View complete run history
+# View complete run history (adjust path for your configured output directory)
+cat outputs/index.json | python -m json.tool
+
+# If using "runs" as output directory (like in examples):
 cat runs/index.json | python -m json.tool
 ```
 
@@ -373,14 +376,14 @@ Sample output:
 **Querying Runs:**
 
 ```bash
-# List all runs for a specific experiment
-jq '.runs[] | select(.experiment == "my-first-experiment")' runs/index.json
+# List all runs for a specific experiment (adjust path for your output directory)
+jq '.runs[] | select(.experiment == "my-first-experiment")' outputs/index.json
 
 # Get the most recent run
-jq '.runs | sort_by(.created_at) | last' runs/index.json
+jq '.runs | sort_by(.created_at) | last' outputs/index.json
 
 # Count total runs
-jq '.runs | length' runs/index.json
+jq '.runs | length' outputs/index.json
 ```
 
 **Programmatic Access (Python):**
@@ -389,12 +392,12 @@ jq '.runs | length' runs/index.json
 from mlx.history import list_all_runs, get_runs_by_experiment
 from pathlib import Path
 
-# List all runs
-runs = list_all_runs(Path("runs/index.json"))
+# List all runs (use your configured output directory)
+runs = list_all_runs(Path("outputs/index.json"))  # or "runs/index.json" if configured
 print(f"Total runs: {len(runs)}")
 
 # Get runs for specific experiment
-my_runs = get_runs_by_experiment(Path("runs/index.json"), "my-first-experiment")
+my_runs = get_runs_by_experiment(Path("outputs/index.json"), "my-first-experiment")
 for run in my_runs:
     print(f"  {run['timestamp']}: {run['run_dir']}")
 ```
@@ -599,7 +602,7 @@ The `experiments/multi_example.json` file contains three experiments:
 - Experiments execute in order
 - First failure stops remaining experiments
 - Each experiment gets its own timestamped directory
-- All runs tracked in `runs/index.json`
+- All runs tracked in `<output-dir>/index.json`
 
 ### Python Module Invocation
 
@@ -783,7 +786,7 @@ mlx run-experiment --config my-config.json
 }
 ```
 
-**Why?** Makes it easier to identify runs in `runs/index.json` and file system.
+**Why?** Makes it easier to identify runs in `<output-dir>/index.json` and file system.
 
 ### 4. Save Checkpoints Frequently
 
@@ -1073,8 +1076,8 @@ for config in experiments/lr_*.json; do
   mlx run-experiment --config "$config"
 done
 
-# Compare results
-jq '.runs[] | select(.experiment | startswith("tune-lr")) | {experiment, final_loss: .final_metrics.loss}' runs/index.json
+# Compare results (adjust path for your output directory)
+jq '.runs[] | select(.experiment | startswith("tune-lr")) | {experiment, final_loss: .final_metrics.loss}' outputs/index.json
 ```
 
 ### Comparing Experiments

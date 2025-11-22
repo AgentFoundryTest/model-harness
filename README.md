@@ -432,28 +432,31 @@ mlx eval --dry-run --config my_config.json --run-dir runs/my-experiment/20241122
 
 ### Viewing Run History
 
-MLX automatically tracks all experiment runs in `runs/index.json`. You can view and query this history:
+MLX automatically tracks all experiment runs in `<output-dir>/index.json` (by default: `outputs/index.json`). You can view and query this history:
 
 ```bash
-# View the complete run history
+# View the complete run history (adjust path based on your output.directory config)
+cat outputs/index.json | python -m json.tool
+
+# If using custom output directory (e.g., "runs" as in examples):
 cat runs/index.json | python -m json.tool
 
 # List all runs for a specific experiment
-cat runs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
+cat outputs/index.json | python -m json.tool | grep -A 3 '"experiment": "my-experiment"'
 
 # View summary of a specific run
-cat runs/my-experiment/20241122_143025/summary.json | python -m json.tool
+cat outputs/my-experiment/20241122_143025/summary.json | python -m json.tool
 
 # View metrics for a specific run
-cat runs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
+cat outputs/my-experiment/20241122_143025/metrics/metrics.json | python -m json.tool
 
 # View human-readable metrics summary
-cat runs/my-experiment/20241122_143025/metrics/metrics.md
+cat outputs/my-experiment/20241122_143025/metrics/metrics.md
 ```
 
 #### Run History Structure
 
-The `runs/index.json` file contains a list of all experiments:
+The `<output-dir>/index.json` file contains a list of all experiments:
 
 ```json
 {
@@ -506,7 +509,7 @@ mlx run-experiment --config experiments/multi_example.json
 - Experiments execute in order
 - First failure stops remaining experiments
 - Each experiment gets its own timestamped directory
-- All runs are tracked in `runs/index.json`
+- All runs are tracked in `<output-dir>/index.json`
 
 ### Command-Line Options
 
@@ -982,7 +985,7 @@ The `TrainingLoop` class coordinates epoch-based training with:
 The `OutputManager` creates organized run directories:
 - Pattern: `runs/<experiment>/<timestamp>/`
 - Subdirectories: `checkpoints/`, `metrics/`
-- Optional `runs/index.json` for tracking all runs
+- Optional `<output-dir>/index.json` for tracking all runs
 - Unique timestamp-based naming prevents conflicts
 
 #### Metrics Writer
@@ -1093,7 +1096,7 @@ Human-readable Markdown summary with tables and final metrics.
 
 ### Optional Run Indexing
 
-When `maintain_index=True`, the system creates `runs/index.json`:
+When `maintain_index=True`, the system creates `<output-dir>/index.json`:
 
 ```json
 {
